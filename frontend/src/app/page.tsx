@@ -195,65 +195,110 @@ export default function LandingPage() {
 
       {/* Main Content Area */}
       <main className="relative z-10">
-        {/* HERO SECTION */}
-        <section className="pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-          {/* Badge Pill */}
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 text-blue-300 text-xs font-medium mb-8 backdrop-blur-md animate-pulse">
-            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-            <span>Continuous Autonomous Red-Teaming for AI Agents</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-          </div>
+        {/* HERO SECTION WITH ARCHITECTURE SHOWCASE */}
+        <section className="pt-12 sm:pt-20 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left Column (Hero Content): 7 cols */}
+            <div className="lg:col-span-7 text-left space-y-6">
+              {/* Badge Pill */}
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-emerald-500/10 border border-blue-500/20 text-blue-300 text-xs font-semibold backdrop-blur-md">
+                <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                <span>Next-Gen Autonomous Agent Red-Teaming</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-1" />
+              </div>
 
-          {/* Hero Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]">
-            Secure Autonomous AI Agents{" "}
-            <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">
-              Before Adversaries Exploit Them.
-            </span>
-          </h1>
+              {/* Hero Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+                Secure Autonomous AI Agents{" "}
+                <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-300 bg-clip-text text-transparent">
+                  Before Adversaries Exploit Them.
+                </span>
+              </h1>
 
-          {/* Hero Subtitle */}
-          <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-            ARTEF continuously tests, fuzzes, and stress-tests LLM agents across multi-turn trajectories, tool execution, and RAG pipelines. Automated defense against prompt injection, jailbreaks, and memory poisoning.
-          </p>
+              {/* Hero Subtitle */}
+              <p className="text-base sm:text-lg text-slate-300 leading-relaxed font-normal max-w-2xl">
+                ARTEF autonomously probes, jailbreaks, and stress-tests LLM agents across multi-turn trajectories, tool execution, and RAG pipelines. Stop prompt injections, jailbreak cascades, and memory poisoning with continuous CI/CD safety gates.
+              </p>
 
-          {/* Primary CTA Buttons */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={handleLaunch}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-base bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center space-x-2 group"
-            >
-              <Play className="w-4 h-4 fill-white group-hover:translate-x-0.5 transition-transform" />
-              <span>Launch ARTEF Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              {/* Primary CTA Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <button
+                  onClick={handleLaunch}
+                  className="px-8 py-3.5 rounded-xl font-semibold text-base bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center space-x-2 group"
+                >
+                  <Play className="w-4 h-4 fill-white group-hover:translate-x-0.5 transition-transform" />
+                  <span>Launch ARTEF Console</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
 
-            <a
-              href="#simulator"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl font-medium text-base bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-white backdrop-blur-lg transition-all duration-200 flex items-center justify-center space-x-2"
-            >
-              <Terminal className="w-4 h-4 text-blue-400" />
-              <span>Try Interactive Simulator</span>
-            </a>
-          </div>
+                <a
+                  href="#simulator"
+                  className="px-6 py-3.5 rounded-xl font-medium text-base bg-slate-900/80 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-white backdrop-blur-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                  <Terminal className="w-4 h-4 text-blue-400" />
+                  <span>Try Live Simulator</span>
+                </a>
+              </div>
 
-          {/* Live Key Metrics Bar */}
-          <div className="mt-16 pt-8 border-t border-slate-800/80 max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-left">
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/60">
-              <div className="text-2xl sm:text-3xl font-bold text-white">45+</div>
-              <div className="text-xs text-slate-400 font-medium mt-1">Attack Strategies Built-in</div>
+              {/* 4 Mini Telemetry Metrics */}
+              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div className="text-2xl font-bold text-white">45+</div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">Attack Vectors</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div className="text-2xl font-bold text-emerald-400">&lt; 12ms</div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">Guardrail Latency</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div className="text-2xl font-bold text-blue-400">99.4%</div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">Multi-Judge Acc</div>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800">
+                  <div className="text-2xl font-bold text-indigo-400">100%</div>
+                  <div className="text-[11px] text-slate-400 font-medium mt-0.5">OWASP LLM Top 10</div>
+                </div>
+              </div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/60">
-              <div className="text-2xl sm:text-3xl font-bold text-emerald-400">&lt; 12ms</div>
-              <div className="text-xs text-slate-400 font-medium mt-1">Guardrail Engine Latency</div>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/60">
-              <div className="text-2xl sm:text-3xl font-bold text-blue-400">99.4%</div>
-              <div className="text-xs text-slate-400 font-medium mt-1">Multi-Judge Accuracy</div>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/60">
-              <div className="text-2xl sm:text-3xl font-bold text-indigo-400">100%</div>
-              <div className="text-xs text-slate-400 font-medium mt-1">OWASP LLM Coverage</div>
+
+            {/* Right Column (Architecture Diagram Showcase): 5 cols */}
+            <div className="lg:col-span-5 relative flex justify-center">
+              {/* Multi-color ambient glow matching the diagram */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-red-600/25 via-blue-600/20 to-emerald-500/25 rounded-3xl blur-3xl opacity-75 animate-pulse" />
+
+              {/* Showcase Card */}
+              <div className="relative w-full max-w-lg rounded-3xl bg-slate-900/90 border border-slate-700/70 p-4 sm:p-5 backdrop-blur-2xl shadow-2xl transition-all duration-300 hover:border-blue-500/50 group">
+                {/* Top Badges */}
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800 text-xs font-mono">
+                  <span className="flex items-center space-x-1.5 text-rose-400 font-semibold bg-rose-500/10 px-2.5 py-1 rounded-full border border-rose-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                    <span>Red-Team Vectors</span>
+                  </span>
+                  <span className="flex items-center space-x-1.5 text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Continuous Evaluation</span>
+                  </span>
+                </div>
+
+                {/* Diagram Card Canvas */}
+                <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-xl flex items-center justify-center overflow-hidden border border-slate-200">
+                  <img
+                    src="/images/artef-diagram.png"
+                    alt="ARTEF — Agent Red-Teaming &amp; Evaluation Framework Architecture"
+                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+
+                {/* Bottom Telemetry Status Pill */}
+                <div className="mt-3.5 px-3.5 py-2 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between text-xs">
+                  <div className="flex items-center space-x-2 text-slate-300">
+                    <Shield className="w-4 h-4 text-blue-400" />
+                    <span className="font-semibold text-white">ARTEF Engine:</span>
+                    <span className="text-emerald-400 font-mono font-medium">PROTECTION ACTIVE</span>
+                  </div>
+                  <span className="text-slate-500 font-mono text-[11px] hidden sm:inline">v1.0-OJT</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>
