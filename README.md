@@ -16,6 +16,10 @@
   <img src="https://img.shields.io/badge/Safety%20Gate-Automated-brightgreen.svg?style=for-the-badge" alt="Gate Status">
 </p>
 
+<p align="center">
+  <img src="assets/artef-diagram.png" alt="ARTEF Architecture & Adversarial Evaluation Pipeline" width="880" style="border-radius: 10px; max-width: 100%; height: auto;" />
+</p>
+
 ---
 
 ## 📑 Table of Contents
@@ -79,6 +83,10 @@ As generative AI agents gain autonomous capabilities—such as SQL query executi
 ## 🏗️ System Architecture
 
 ARTEF is built following clean architecture principles, decoupling presentation, API routing, domain evaluation, and storage tiers.
+
+<p align="center">
+  <img src="assets/artef-diagram.png" alt="ARTEF Layered Architecture Diagram" width="850" style="border-radius: 8px; margin: 16px 0;" />
+</p>
 
 ```mermaid
 flowchart TD
