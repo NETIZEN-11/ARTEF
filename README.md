@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/FastAPI-0.109+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Next.js-14.1.0-000000.svg?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js">
+`	ext
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+">
   <img src="https://img.shields.io/badge/TypeScript-5.3-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
@@ -47,7 +47,7 @@
 
 **Agent Red-Teaming & Evaluation Framework (ARTEF)** is an enterprise-grade continuous-assurance and adversarial stress-testing platform engineered specifically for production AI agents, autonomous tool-use workflows, and LLM applications.
 
-As generative AI agents gain autonomous capabilities—such as SQL query execution, bash command invocation, external API calling, and automated customer triage—traditional software testing falls short. ARTEF acts as the **central quality & security firewall** in your agent lifecycle:
+`	ext
 
 1. **Subjects Agents to Adversarial Attacks**: Probes agents against OWASP Top 10 for LLM risks including prompt injections, jailbreaks, data exfiltration, token smuggling, and SSRF.
 2. **Detects Behavioral & Safety Drift**: Runs statistical regression analysis comparing active candidates against cryptographically locked golden baselines.
@@ -55,14 +55,41 @@ As generative AI agents gain autonomous capabilities—such as SQL query executi
 4. **Enforces Deterministic CI/CD Quality Gates**: Issues programmatic `PASS`, `WARN`, or `BLOCK` verdicts capable of halting pull requests and deployment pipelines.
 5. **Empowers Human Reviewers (HITL)**: Intelligently routes low-confidence and high-severity edge cases to human specialists with a complete replayable evidence audit trail.
 
-```
-                ┌─────────────────────────────────────────────────────────────┐
-                │             Agent Lifecycle Assurance in ARTEF              │
-                └─────────────────────────────────────────────────────────────┘
-  Developer Commit  ──►  CI/CD Pipeline  ──►  ARTEF Engine  ──►  Deterministic Gate  ──►  Deployment
-      (Agent v2.1)        (GitHub Action)     • Adversarial Run     [BLOCK / PASS]          (Production)
-                                              • Regression Check
-                                              • Severity Matrix
+```text
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   ARTEF Continuous Agent Assurance Lifecycle                                 │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────┐        ┌──────────────────┐        ┌────────────────────────────────────────────────┐
+  │ Developer Commit │  ────► │  CI/CD Pipeline  │  ────► │               ARTEF Engine Core                │
+  │ • System Prompts │        │  (GitHub Action  │        ├────────────────────────────────────────────────┤
+  │ • Agent Tools    │        │   or Webhook)    │        │ 1. Adversarial Probes (Injection, Jailbreak)   │
+  │ • Model Weights  │        │                  │        │ 2. Dual Scoring (Deterministic + LLM Judge)    │
+  │ • Release v2.4   │        │                  │        │ 3. Baseline Regression Delta vs Golden Model   │
+  └──────────────────┘        └──────────────────┘        │ 4. Severity Scoring Matrix (S0 to S4 CVSS)     │
+                                                          └───────────────────────┬────────────────────────┘
+                                                                                  │
+                                                                                  ▼
+                                                          ┌────────────────────────────────────────────────┐
+                                                          │            Deterministic CI/CD Gate            │
+                                                          │           Programmatic Policy Engine           │
+                                                          └───────┬──────────────────┬──────────────────┬──┘
+                                                                  │                  │                  │
+                                                 ┌────────────────┘                  │                  └────────────────┐
+                                                 ▼ (No S3/S4)                        ▼ (Drift Warning)                   ▼ (Critical Flaw)
+                                        ┌──────────────────┐                ┌──────────────────┐                ┌──────────────────┐
+                                        │      PASS        │                │      WARN        │                │      BLOCK       │
+                                        │  Safe to Deploy  │                │ Non-fatal Drift  │                │ Pipeline Halted  │
+                                        └────────┬─────────┘                └────────┬─────────┘                └────────┬─────────┘
+                                                 │                                   │                                   │
+                                                 ▼                                   │                                   ▼
+                                        ┌──────────────────┐                         ▼                          ┌──────────────────┐
+                                        │ Production Agent │                ┌──────────────────┐                │ HITL Review Queue│
+                                        │  Live in Cluster │                │ Slack / Webhook  │                │ Human Specialist │
+                                        └──────────────────┘                │ Alert Dispatched │                └────────┬─────────┘
+                                                                            └──────────────────┘                         │
+                                                                                     ▲                                   │
+                                                                                     └── Re-evaluate After Triage ◄──────┘
 ```
 
 ---
