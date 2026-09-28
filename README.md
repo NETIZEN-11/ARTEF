@@ -55,41 +55,63 @@
 4. **Enforces Deterministic CI/CD Quality Gates**: Issues programmatic `PASS`, `WARN`, or `BLOCK` verdicts capable of halting pull requests and deployment pipelines.
 5. **Empowers Human Reviewers (HITL)**: Intelligently routes low-confidence and high-severity edge cases to human specialists with a complete replayable evidence audit trail.
 
-```text
-┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   ARTEF Continuous Agent Assurance Lifecycle                                 │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    %% Styling Classes
+    classDef dev fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef cicd fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef engine fill:#fae8ff,stroke:#c026d3,stroke-width:2px,color:#86198f;
+    classDef gate fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
+    classDef pass fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef warn fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#9a3412;
+    classDef block fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
+    classDef hitl fill:#ede9fe,stroke:#7c3aed,stroke-width:2px,color:#5b21b6;
 
-  ┌──────────────────┐        ┌──────────────────┐        ┌────────────────────────────────────────────────┐
-  │ Developer Commit │  ────► │  CI/CD Pipeline  │  ────► │               ARTEF Engine Core                │
-  │ • System Prompts │        │  (GitHub Action  │        ├────────────────────────────────────────────────┤
-  │ • Agent Tools    │        │   or Webhook)    │        │ 1. Adversarial Probes (Injection, Jailbreak)   │
-  │ • Model Weights  │        │                  │        │ 2. Dual Scoring (Deterministic + LLM Judge)    │
-  │ • Release v2.4   │        │                  │        │ 3. Baseline Regression Delta vs Golden Model   │
-  └──────────────────┘        └──────────────────┘        │ 4. Severity Scoring Matrix (S0 to S4 CVSS)     │
-                                                          └───────────────────────┬────────────────────────┘
-                                                                                  │
-                                                                                  ▼
-                                                          ┌────────────────────────────────────────────────┐
-                                                          │            Deterministic CI/CD Gate            │
-                                                          │           Programmatic Policy Engine           │
-                                                          └───────┬──────────────────┬──────────────────┬──┘
-                                                                  │                  │                  │
-                                                 ┌────────────────┘                  │                  └────────────────┐
-                                                 ▼ (No S3/S4)                        ▼ (Drift Warning)                   ▼ (Critical Flaw)
-                                        ┌──────────────────┐                ┌──────────────────┐                ┌──────────────────┐
-                                        │      PASS        │                │      WARN        │                │      BLOCK       │
-                                        │  Safe to Deploy  │                │ Non-fatal Drift  │                │ Pipeline Halted  │
-                                        └────────┬─────────┘                └────────┬─────────┘                └────────┬─────────┘
-                                                 │                                   │                                   │
-                                                 ▼                                   │                                   ▼
-                                        ┌──────────────────┐                         ▼                          ┌──────────────────┐
-                                        │ Production Agent │                ┌──────────────────┐                │ HITL Review Queue│
-                                        │  Live in Cluster │                │ Slack / Webhook  │                │ Human Specialist │
-                                        └──────────────────┘                │ Alert Dispatched │                └────────┬─────────┘
-                                                                            └──────────────────┘                         │
-                                                                                     ▲                                   │
-                                                                                     └── Re-evaluate After Triage ◄──────┘
+    subgraph Phase1 ["1. Candidate Release"]
+        DEV["<b>Developer Commit (Agent v2.4)</b><br/>• System Prompts<br/>• Autonomous Tools<br/>• Model Weights / Hyperparameters"]:::dev
+    end
+
+    subgraph Phase2 ["2. CI/CD Orchestration"]
+        CICD["<b>CI/CD Pipeline</b><br/>• GitHub Actions / Webhook Trigger<br/>• Test Runner Provisioning"]:::cicd
+    end
+
+    subgraph Phase3 ["3. ARTEF Engine Core"]
+        direction TB
+        ADV["1. Adversarial Probes<br/>Prompt Injection, Jailbreak, SSRF"]:::engine
+        DUAL["2. Dual Scoring System<br/>Zero-cost Regex + LLM-as-a-Judge"]:::engine
+        REG["3. Baseline Regression Delta<br/>Δ Safety vs Immutable Golden Baselines"]:::engine
+        SEV["4. Severity Risk Matrix<br/>Deterministic CVSS-Aligned S0 to S4"]:::engine
+        ADV --> DUAL --> REG --> SEV
+    end
+
+    subgraph Phase4 ["4. Deterministic CI/CD Gate"]
+        GATE["<b>Deterministic CI/CD Safety Gate</b><br/>Programmatic Policy Rule Engine"]:::gate
+    end
+
+    subgraph Phase5 ["5. Verdict & Automated Actions"]
+        PASS["<b>PASS</b><br/>Safe to Deploy<br/>(No S3/S4 Flaws)"]:::pass
+        WARN["<b>WARN</b><br/>Non-fatal Safety Drift<br/>(Flagged Tolerance)"]:::warn
+        BLOCK["<b>BLOCK</b><br/>Pipeline Halted<br/>(Critical Vulnerability)"]:::block
+
+        PROD["<b>Production Agent</b><br/>Live in Production Cluster"]:::pass
+        SLACK["<b>Slack / Webhook Alert</b><br/>Engineering Notification"]:::warn
+        HITL["<b>HITL Review Queue</b><br/>Human Specialist Triage & Evidence Audit"]:::hitl
+    end
+
+    %% Flow connections
+    DEV -->|Push / PR| CICD
+    CICD -->|Trigger Evaluation| Phase3
+    SEV -->|Safety Metrics Vector| GATE
+
+    GATE -->|Clear Safety Gate| PASS
+    GATE -->|Drift Alert| WARN
+    GATE -->|Policy Violation| BLOCK
+
+    PASS -->|Continuous Deployment| PROD
+    WARN -->|Dispatch Notification| SLACK
+    BLOCK -->|Halt PR & Route Case| HITL
+
+    HITL -.->|Re-evaluate After Expert Sign-off| CICD
 ```
 
 ---
