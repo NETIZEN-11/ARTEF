@@ -109,82 +109,126 @@
 
 ## 🏗️ System Architecture
 
-ARTEF is built following clean architecture principles, decoupling presentation, API routing, domain evaluation, and storage tiers.
-
-<p align="center">
-  <img src="assets/artef-diagram.png" alt="ARTEF Layered Architecture Diagram" width="850" style="border-radius: 8px; margin: 16px 0;" />
-</p>
+ARTEF is built following clean modular architecture principles, decoupling presentation, API routing, autonomous adversarial generation, multi-tier evaluation, and deterministic CI/CD policy gates into distinct layers.
 
 ```mermaid
 flowchart TD
-    classDef client fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#ffffff
-    classDef api fill:#06b6d4,stroke:#0891b2,stroke-width:2px,color:#ffffff
-    classDef service fill:#8b5cf6,stroke:#6d28d9,stroke-width:2px,color:#ffffff
-    classDef eval fill:#ec4899,stroke:#be185d,stroke-width:2px,color:#ffffff
-    classDef store fill:#10b981,stroke:#047857,stroke-width:2px,color:#ffffff
-    classDef gate fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#ffffff
+    %% Styling Classes
+    classDef client fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef api fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef service fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#166534;
+    classDef eval fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#991b1b;
+    classDef redteam fill:#fae8ff,stroke:#c026d3,stroke-width:2px,color:#86198f;
+    classDef target fill:#ffedd5,stroke:#ea580c,stroke-width:2px,color:#9a3412;
+    classDef store fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#6b21a8;
+    classDef gate fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
 
-    subgraph PresentationLayer ["Frontend Presentation Layer (Next.js 14 / TypeScript)"]
-        UI["Web Console Dashboard
-/dashboard"]:::client
-        RunsUI["Test Suite & Run Monitor
-/runs"]:::client
-        ReviewUI["HITL Human Review Queue
-/review"]:::client
-        GateUI["CI Gate Evidence Inspector
-/gate"]:::client
+    subgraph PresentationLayer ["1. Client and Presentation Layer (Next.js 14 / TypeScript)"]
+        UI_Dash["Dashboard and Telemetry<br/><code>/dashboard</code>"]:::client
+        UI_Runs["Test Suites and Runs Monitor<br/><code>/runs</code>"]:::client
+        UI_Sim["Live Attack Simulator<br/><code>/simulator</code>"]:::client
+        UI_HITL["HITL Human Review Queue<br/><code>/review</code>"]:::client
+        UI_Gate["CI/CD Gate Evidence Inspector<br/><code>/gate</code>"]:::client
+        CLI_Client["Apps CLI and Python/TS SDK"]:::client
     end
 
-    subgraph APILayer ["Application Gateway (FastAPI Async)"]
-        Router["REST API v1 Router
-/api/v1/*"]:::api
-        Auth["RS256 JWT & RBAC Middleware"]:::api
-        RateLimit["Rate Limiting & Correlation ID Tracking"]:::api
+    subgraph APIGateway ["2. API Gateway and Security Perimeter (FastAPI Async)"]
+        Router["REST Router and Endpoints<br/><code>/api/v1/*</code>"]:::api
+        AuthMiddleware["RS256 JWT and RBAC (5 Distinct Roles)"]:::api
+        RateLimit["Rate Limiter (Token Bucket / Redis)"]:::api
+        AuditLog["Audit and Correlation ID Tracker"]:::api
     end
 
-    subgraph ServiceLayer ["Business & Orchestration Core"]
-        SuiteSvc["Test Suite Service"]:::service
-        RunSvc["Execution Coordinator"]:::service
-        RedTeamSvc["Adversarial Generator & Red-Team Agent"]:::service
-        ReviewSvc["HITL Queue Service"]:::service
+    subgraph ServiceCore ["3. Application Services and Business Orchestration"]
+        SuiteSvc["Test Suite and Case Manager"]:::service
+        RunSvc["Run Orchestrator and Task Dispatcher"]:::service
+        HITLSvc["Human-in-the-Loop Triage Service"]:::service
+        GuardSvc["Guardrails and MCP Security Proxy"]:::service
+        BaselineSvc["Golden Baseline Engine"]:::service
     end
 
-    subgraph EvaluationEngine ["Evaluation Core"]
-        Scorer["Multi-Tier Scoring Engine
-Deterministic + LLM Judge"]:::eval
-        RegEng["Regression Detection Engine
-Baseline Metric Delta"]:::eval
-        SevClass["Severity Classifier
-CVSS-Aligned S0-S4"]:::eval
-        CIGate["CI Quality Gate Evaluator
-PASS / WARN / BLOCK"]:::gate
+    subgraph RedTeamEngine ["4. Autonomous Red-Teaming Engine (Adversarial Swarm)"]
+        PayloadGen["Attack Synthesizer and Mutator<br/>(OWASP LLM Top 10)"]:::redteam
+        AttackVectors["Attack Vectors:<br/>Prompt Injections<br/>Multi-turn Jailbreaks<br/>Tool Poisoning<br/>SSRF and Exfiltration"]:::redteam
+        StateGraph["LangGraph-Style State Machine<br/>(Select -> Probe -> Adapt -> Escalate)"]:::redteam
     end
 
-    subgraph StorageLayer ["Persistence & State Tier"]
-        DB[("PostgreSQL / SQLite
-Async SQLAlchemy 2.0")]:::store
-        Cache[("Redis Cache & Task Broker")]:::store
-        Audit[("Tamper-Evident Audit Vault")]:::store
+    subgraph TargetAgentLayer ["5. Target Agent Under Test (SUT)"]
+        AgentAPI["Agent API / WebSocket Interface"]:::target
+        LLMCog["LLM Cognitive Core<br/>(Prompts, System Instructions)"]:::target
+        AgentTools["Agent Autonomous Tools<br/>(SQL, Shell, Webhooks, APIs)"]:::target
     end
 
-    UI --> Router
-    RunsUI --> Router
-    ReviewUI --> Router
-    GateUI --> Router
+    subgraph EvaluationCore ["6. Multi-Tier Evaluation and Scoring Pipeline"]
+        Tier1["Tier 1: Deterministic Matchers<br/>(Regex, Keywords, Refusal Checks)"]:::eval
+        Tier2["Tier 2: LLM-as-a-Judge<br/>(Strict JSON Pydantic Scoring)"]:::eval
+        Tier3["Tier 3: Resilient Fallback<br/>(Heuristic Safety Circuit Breaker)"]:::eval
+        SevMatrix["CVSS Severity Classifier<br/>(S0 Informational to S4 Critical)"]:::eval
+        RegEngine["Statistical Regression Math<br/>(Delta Safety vs Golden Baseline)"]:::eval
+    end
 
-    Router --> Auth --> RateLimit
-    RateLimit --> SuiteSvc & RunSvc & RedTeamSvc & ReviewSvc
+    subgraph GatePolicy ["7. Deterministic CI/CD Quality Gate"]
+        GateDecider["Policy Rule Engine<br/>Threshold and Tolerance Check"]:::gate
+        Verdict_Pass["PASS: Safe to Deploy"]:::gate
+        Verdict_Warn["WARN: Non-fatal Drift"]:::gate
+        Verdict_Block["BLOCK: PR Pipeline Halted"]:::gate
+    end
 
-    RunSvc --> Scorer
-    Scorer --> RegEng
-    RegEng --> SevClass
-    SevClass --> CIGate
+    subgraph StorageLayer ["8. Persistence and Caching Tier"]
+        PostgreSQL[("PostgreSQL / SQLite<br/>Async SQLAlchemy 2.0")]:::store
+        Redis[("Redis In-Memory<br/>Celery Queue and Cache")]:::store
+        AuditVault[("Tamper-Evident Audit Vault<br/>Cryptographic Checksums")]:::store
+    end
 
-    SuiteSvc --> DB
-    RunSvc --> DB
-    ReviewSvc --> DB
-    CIGate --> Audit
-    RedTeamSvc --> Cache
+    %% Presentation to API
+    PresentationLayer --> Router
+    Router --> AuthMiddleware
+    AuthMiddleware --> RateLimit
+    RateLimit --> AuditLog
+
+    %% API to Services
+    AuditLog --> SuiteSvc
+    AuditLog --> RunSvc
+    AuditLog --> HITLSvc
+    AuditLog --> GuardSvc
+    AuditLog --> BaselineSvc
+
+    %% Service Execution
+    RunSvc --> RedTeamEngine
+    RedTeamEngine --> PayloadGen
+    PayloadGen --> AttackVectors
+    AttackVectors --> StateGraph
+    StateGraph --> AgentAPI
+    AgentAPI --> LLMCog
+    LLMCog --> AgentTools
+
+    %% Agent Response to Evaluation
+    AgentAPI --> Tier1
+    Tier1 --> Tier2
+    Tier2 --> Tier3
+    Tier3 --> SevMatrix
+    SevMatrix --> RegEngine
+    RegEngine --> BaselineSvc
+
+    %% Evaluation to Gate
+    RegEngine --> GateDecider
+    GateDecider --> Verdict_Pass
+    GateDecider --> Verdict_Warn
+    GateDecider --> Verdict_Block
+
+    %% Escalations
+    Verdict_Block --> UI_HITL
+    Verdict_Warn --> UI_Gate
+    Verdict_Pass --> CLI_Client
+
+    %% Persistence Links
+    SuiteSvc --> PostgreSQL
+    RunSvc --> PostgreSQL
+    HITLSvc --> PostgreSQL
+    BaselineSvc --> PostgreSQL
+    RunSvc --> Redis
+    StateGraph --> Redis
+    GateDecider --> AuditVault
 ```
 
 ---
