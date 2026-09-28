@@ -25,16 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Load error suppressor FIRST - before any other script */}
         <script src="/suppress-web-vitals.js" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // AGGRESSIVE web vitals error suppression
               (function() {
-                // 1. Intercept console.error IMMEDIATELY
                 const _consoleError = console.error;
                 console.error = function(...args) {
                   const msg = String(args[0] || '');
@@ -51,7 +48,6 @@ export default function RootLayout({
                   _consoleError.apply(console, args);
                 };
 
-                // 2. Intercept window.onerror
                 const _onerror = window.onerror;
                 window.onerror = function(msg, url, line, col, error) {
                   const message = String(msg || '');
@@ -62,7 +58,6 @@ export default function RootLayout({
                   return false;
                 };
 
-                // 3. Intercept addEventListener for 'error'
                 const _addEventListener = EventTarget.prototype.addEventListener;
                 EventTarget.prototype.addEventListener = function(type, listener, options) {
                   if (type === 'error') {
@@ -79,7 +74,6 @@ export default function RootLayout({
                   return _addEventListener.call(this, type, listener, options);
                 };
 
-                // 4. Wrap requestIdleCallback to catch errors
                 if (window.requestIdleCallback) {
                   const _requestIdleCallback = window.requestIdleCallback;
                   window.requestIdleCallback = function(callback, options) {
@@ -91,7 +85,6 @@ export default function RootLayout({
                         if (!error.includes('startTime') && !error.includes('reportAllChanges')) {
                           throw e;
                         }
-                        // Suppress web vitals errors
                       }
                     };
                     return _requestIdleCallback.call(this, wrappedCallback, options);

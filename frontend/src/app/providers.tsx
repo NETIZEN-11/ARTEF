@@ -8,8 +8,6 @@ export function Providers({ children }: { children: ReactNode }) {
   const { fetchUser, isAuthenticated, isLoading, accessToken } = useAuth();
 
   useEffect(() => {
-    // Suppress known React Scheduler devtools noise: "Cannot read properties of undefined (reading 'startTime')"
-    // This is a scheduler/tracing bug triggered by Fast Refresh + React DevTools, not app code. rg "startTime" → 0 hits.
     const handler = (e: ErrorEvent) => {
       if (e.message?.includes("startTime")) e.preventDefault();
     };

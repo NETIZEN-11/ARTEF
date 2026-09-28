@@ -66,7 +66,6 @@ export default function NewSuitePage() {
   const [importFormat, setImportFormat] = useState<"yaml" | "json">("yaml");
   const [importFile, setImportFile] = useState<File | null>(null);
 
-  // New test case form state
   const [newCase, setNewCase] = useState<Partial<TestCase>>({
     test_case_id: "",
     category: "other",

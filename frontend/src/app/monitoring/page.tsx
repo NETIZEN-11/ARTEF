@@ -23,7 +23,6 @@ export default function MonitoringPage() {
       ]);
       if (d.data) setDashboard(d.data);
       else {
-        // fallback to security endpoints
         try {
           const fd = await api.get("/security/security-dashboard");
           setDashboard(fd.data);
