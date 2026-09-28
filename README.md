@@ -32,7 +32,6 @@
   - [Prerequisites](#-prerequisites)
   - [Local Development Setup](#method-1-local-development-fastest)
   - [Docker Production Setup](#method-2-docker-full-stack-production-ready)
-- [Default User Accounts & RBAC](#-default-user-accounts-rbac)
 - [REST API Reference](#-rest-api-reference)
 - [Deterministic CI/CD Safety Quality Gate](#-deterministic-cicd-quality-gate)
 - [Project Directory Structure](#-project-directory-structure)
@@ -357,18 +356,6 @@ docker compose -f docker-compose.prod.yml ps
 - **Interactive ReDoc**: `http://localhost:8000/redoc`
 
 ---
-
-## 🔑 Default User Accounts (RBAC)
-
-ARTEF enforces granular Role-Based Access Control (RBAC). Five pre-configured test users are seeded in development mode:
-
-| Role | Username | Password | Intended Responsibilities |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `admin123` | Full system governance, baseline approvals, user provisioning |
-| **Safety Engineer** | `safety_eng` | `safety123` | Author test suites, configure CI gates, run adversarial campaigns |
-| **ML Engineer** | `ml_eng` | `ml123456` | Trigger benchmark runs, register candidate agent models |
-| **Human Reviewer** | `reviewer` | `review123` | Triage ambiguous verdicts in HITL queue, resolve low-confidence scores |
-| **Read-Only Viewer** | `viewer` | `viewer123` | Executive dashboard views, security reporting, export audit evidence |
 
 ---
 
