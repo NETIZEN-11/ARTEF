@@ -581,12 +581,6 @@ npm run type-check
 
 This is a **proprietary OJT project** — not an open-source project. Source code is shared exclusively for evaluation, review, and demonstration purposes.
 
-| | Permission |
-|:---|:---:|
-| ❌ Commercial redistribution | Not permitted |
-| ❌ Public re-licensing | Not permitted |
-| ✅ OJT evaluator / institutional review | Authorized |
-
 See [LICENSE](LICENSE) for full terms.
 
 </div>
