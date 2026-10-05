@@ -50,7 +50,7 @@ class PIIRedactor:
         self.patterns = PII_PATTERNS.copy()
         if custom_patterns:
             self.patterns.update(custom_patterns)
-        
+
         # Compile redaction replacement
         self.replacement = "[REDACTED]"
 
@@ -123,7 +123,7 @@ class PIIRedactor:
     def redact_dict(self, data: dict[str, Any], fields_to_redact: list[str] | None = None) -> dict[str, Any]:
         """Redact PII from specific fields in a dictionary."""
         result = data.copy()
-        
+
         if fields_to_redact is None:
             # Redact all string values
             for key, value in result.items():
@@ -133,7 +133,7 @@ class PIIRedactor:
                     result[key] = self.redact_dict(value)
                 elif isinstance(value, list):
                     result[key] = [
-                        self.redact_dict(item) if isinstance(item, dict) 
+                        self.redact_dict(item) if isinstance(item, dict)
                         else self.redact(item).redacted_text if isinstance(item, str)
                         else item
                         for item in value
@@ -143,7 +143,7 @@ class PIIRedactor:
             for field in fields_to_redact:
                 if field in result and isinstance(result[field], str):
                     result[field] = self.redact(result[field]).redacted_text
-        
+
         return result
 
 
@@ -163,8 +163,8 @@ def redact_log_data(data: dict[str, Any]) -> dict[str, Any]:
 
 # Fields that commonly contain PII and should be redacted before storage
 SENSITIVE_FIELDS = {
-    "email", "phone", "phone_number", "ssn", "social_security", 
-    "credit_card", "card_number", "api_key", "api_secret", 
+    "email", "phone", "phone_number", "ssn", "social_security",
+    "credit_card", "card_number", "api_key", "api_secret",
     "password", "token", "access_token", "refresh_token",
     "private_key", "private_key_pem", "authorization", "cookie",
     "address", "street_address", "zip_code", "postal_code",
@@ -183,11 +183,11 @@ def redact_execution_data(execution_data: dict[str, Any]) -> dict[str, Any]:
     # Redact request
     if "target_request" in execution_data:
         execution_data["target_request"] = redact_for_storage(execution_data["target_request"])
-    
+
     # Redact response
     if "target_response" in execution_data:
         execution_data["target_response"] = redact_for_storage(execution_data["target_response"])
-    
+
     # Redact tool calls
     if "tool_calls" in execution_data:
         tool_calls = execution_data["tool_calls"]
@@ -196,5 +196,5 @@ def redact_execution_data(execution_data: dict[str, Any]) -> dict[str, Any]:
                 tc["arguments"] = redact_for_storage(tc["arguments"])
             if "result" in tc and isinstance(tc["result"], str):
                 tc["result"] = redact_text(tc["result"])
-    
+
     return execution_data

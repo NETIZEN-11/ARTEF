@@ -1,12 +1,11 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, require_role
-from app.core.exceptions import NotFoundError
 from app.core.security import TokenData
 from app.security.model_scanner.scanner import ModelScanner, ScanConfig
 
@@ -81,7 +80,7 @@ async def security_dashboard(
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer", "viewer"])),
 ):
     """Get security dashboard data."""
-    from app.monitoring import security_metrics, security_monitor
+    from app.monitoring import security_metrics
 
     return security_metrics.get_security_dashboard()
 
@@ -93,7 +92,7 @@ async def run_benchmark(
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer"])),
 ):
     """Run a benchmark evaluation."""
-    from app.evaluation.benchmark import benchmark_runner, BenchmarkType
+    from app.evaluation.benchmark import BenchmarkType, benchmark_runner
 
     try:
         result = await benchmark_runner.run_benchmark(BenchmarkType(benchmark_type))
@@ -128,7 +127,7 @@ async def scan_code(
     from pathlib import Path
 
     p = Path(project_path).resolve()
-    allowed = Path(".").resolve()
+    allowed = Path().resolve()
     try:
         p.relative_to(allowed)
     except ValueError:

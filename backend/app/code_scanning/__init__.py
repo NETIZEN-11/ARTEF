@@ -7,8 +7,8 @@ from enum import Enum
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from app.core.security import TokenData, require_role
 
@@ -98,7 +98,7 @@ class LLMVulnerabilityScanner:
                     ))
 
                 if "prompt" in line.lower() and "system" in line.lower():
-                    if "f" + '"' in line or "'" in line and "f" in line.split("=")[0] if "=" in line else False:
+                    if "f" + '"' in line or ("'" in line and "f" in line.split("=")[0]) if "=" in line else False:
                         self.findings.append(Finding(
                             severity=VulnerabilitySeverity.CRITICAL,
                             category=VulnerabilityCategory.PROMPT_INJECTION,
@@ -216,7 +216,7 @@ class LLMVulnerabilityScanner:
 
     def _read_file(self, path: str) -> str:
         try:
-            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(path, encoding="utf-8", errors="ignore") as f:
                 return f.read()
         except Exception:
             return ""

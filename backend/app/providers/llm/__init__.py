@@ -57,7 +57,7 @@ class OpenAIProvider(LLMProvider):
         response_format: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         breaker = await self._get_circuit_breaker()
-        
+
         async def _do_complete():
             payload = {
                 "model": self.model,
@@ -122,7 +122,7 @@ class AnthropicProvider(LLMProvider):
         response_format: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         breaker = await self._get_circuit_breaker()
-        
+
         async def _do_complete():
             payload = {
                 "model": self.model,

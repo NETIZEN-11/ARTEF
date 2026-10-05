@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from app.core.logging import get_logger
-from app.evaluation.agent.trajectory_evaluator import TrajectoryEvaluator
 from app.evaluation.agent.tool_call_evaluator import ToolCallEvaluator
+from app.evaluation.agent.trajectory_evaluator import TrajectoryEvaluator
 
 logger = get_logger(__name__)
 

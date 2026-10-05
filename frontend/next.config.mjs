@@ -1,6 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false, // Disable strict mode to reduce web vitals
+  eslint: {
+    // Skip ESLint during production builds to avoid hanging
+    // Run `npm run lint` separately for linting
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Type checking is already verified separately
+    ignoreBuildErrors: false,
+  },
   experimental: {
     optimizePackageImports: ["lucide-react", "@radix-ui/react-icons"],
   },

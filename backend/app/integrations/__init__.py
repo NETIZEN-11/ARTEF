@@ -5,6 +5,7 @@ from typing import Any
 from uuid import uuid4
 
 from pydantic import BaseModel
+
 from app.core.config import get_settings
 from app.core.logging import get_logger
 

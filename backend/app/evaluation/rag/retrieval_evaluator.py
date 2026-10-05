@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import math
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -37,7 +37,7 @@ class RetrievalEvaluator:
         retrieved_docs: list[dict[str, Any]],
         ground_truth_docs: list[str] | None = None,
     ) -> RetrievalEvaluationResult:
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         gt_docs = ground_truth_docs or []
         retrieved_contents = [d.get("content", "") for d in retrieved_docs]
 
@@ -62,7 +62,7 @@ class RetrievalEvaluator:
         mrr = self._calculate_mrr(retrieved_contents, gt_docs)
         ndcg = self._calculate_ndcg(retrieved_contents, gt_docs)
 
-        elapsed = datetime.now(timezone.utc) - start_time
+        elapsed = datetime.now(UTC) - start_time
         execution_time_ms = int(elapsed.total_seconds() * 1000)
 
         return RetrievalEvaluationResult(

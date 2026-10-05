@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
@@ -24,7 +25,7 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { TrendingUp, TrendingDown, Target, AlertTriangle, CheckCircle, DollarSign, Clock, Filter } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, AlertTriangle, CheckCircle, DollarSign, Clock, Filter, RefreshCw } from "lucide-react";
 
 interface RunSummary {
   id: string;
@@ -59,16 +60,26 @@ export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("7d");
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
+  const fetchAnalytics = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       const res = await api.get(`/analytics?range=${timeRange}`);
       setAnalytics(res.data);
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
+      setError("Failed to load analytics. Please check your connection.");      setAnalytics(null);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [timeRange]);
 
@@ -81,6 +92,17 @@ export default function AnalyticsPage() {
       }
     }
   }, [isAuthenticated, isLoading, fetchAnalytics]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    
+    const interval = setInterval(() => {
+      fetchAnalytics(true);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchAnalytics]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -131,16 +153,32 @@ export default function AnalyticsPage() {
           <div>
             <h1 className="text-3xl font-bold">Analytics</h1>
             <p className="text-muted-foreground">Deep insights into your evaluation data</p>
+            {error && (
+              <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {error}
+              </p>
+            )}
           </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-48"><SelectValue placeholder="Time range" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-              <SelectItem value="1y">Last year</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => fetchAnalytics(true)}
+              disabled={refreshing}
+              title="Refresh analytics"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-48"><SelectValue placeholder="Time range" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+                <SelectItem value="1y">Last year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -462,3 +500,4 @@ export default function AnalyticsPage() {
     </DashboardLayout>
   );
 }
+

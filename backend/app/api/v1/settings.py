@@ -1,6 +1,6 @@
+import difflib
 from datetime import datetime
 from uuid import UUID
-import difflib
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
@@ -156,21 +156,20 @@ async def diff_prompts(
 ):
     prompt_a = await prompt_repo.get_by_type_version(request.prompt_type, request.version_a)
     prompt_b = await prompt_repo.get_by_type_version(request.prompt_type, request.version_b)
-    
+
     if not prompt_a:
         raise NotFoundError("PromptVersion", f"{request.prompt_type}/{request.version_a}")
     if not prompt_b:
         raise NotFoundError("PromptVersion", f"{request.prompt_type}/{request.version_b}")
-    
+
     # Compute diff
-    import difflib
     diff = list(difflib.unified_diff(
         prompt_a.content.splitlines(keepends=True),
         prompt_b.content.splitlines(keepends=True),
         fromfile=f"{prompt_a.prompt_type} v{prompt_a.version}",
         tofile=f"{prompt_b.prompt_type} v{prompt_b.version}",
     ))
-    
+
     return {
         "prompt_type": request.prompt_type,
         "version_a": request.version_a,

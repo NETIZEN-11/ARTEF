@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from app.core.logging import get_logger
 

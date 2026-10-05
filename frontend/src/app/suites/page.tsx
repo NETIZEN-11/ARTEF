@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Plus, Upload, Search, FileText, Eye, Edit, Trash2, Download, AlertTriangle } from "lucide-react";
+import { Plus, Upload, Search, FileText, Eye, Edit, Trash2, Download, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface TestCase {
   id: string;
@@ -52,15 +52,26 @@ export default function SuitesPage() {
   const [importContent, setImportContent] = useState("");
   const [newSuiteName, setNewSuiteName] = useState("");
   const [newSuiteDescription, setNewSuiteDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchSuites = useCallback(async () => {
+  const fetchSuites = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       const res = await api.get("/suites");
       setSuites(res.data);
     } catch (error) {
       console.error("Failed to fetch suites:", error);
+      setError("No test suites found. Create your first suite to get started.");      setSuites([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -73,6 +84,17 @@ export default function SuitesPage() {
       }
     }
   }, [isAuthenticated, isLoading, fetchSuites]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    
+    const interval = setInterval(() => {
+      fetchSuites(true);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchSuites]);
 
   const handleCreateSuite = async () => {
     if (!newSuiteName.trim()) return;
@@ -142,8 +164,22 @@ export default function SuitesPage() {
           <div>
             <h1 className="text-3xl font-bold">Test Suites</h1>
             <p className="text-muted-foreground">Manage test suites and test cases</p>
+            {error && (
+              <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {error}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => fetchSuites(true)}
+              disabled={refreshing}
+              title="Refresh suites"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" /> New Suite</Button>

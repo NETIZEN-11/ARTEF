@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Eye, Edit, Filter, AlertTriangle, CheckCircle, XCircle, AlertCircle, Flag, FileText, Code, Copy, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Eye, Edit, Filter, AlertTriangle, CheckCircle, XCircle, AlertCircle, Flag, FileText, Code, Copy, ChevronDown, ChevronUp, Search, RefreshCw } from "lucide-react";
 
 interface EvidenceItem {
   source: string;
@@ -67,14 +67,27 @@ export default function ReviewsPage() {
   const [newNotes, setNewNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [evidenceSearch, setEvidenceSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchReviews = useCallback(async () => {
+  const fetchReviews = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       setReviews([]);
+      // Backend doesn't have reviews endpoint yet, using empty for now
     } catch (error) {
       console.error("Failed to fetch reviews:", error);
+      setError("Failed to load reviews. No data available.");
+      setReviews([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [filterStatus, filterSeverity]);
 
@@ -96,6 +109,17 @@ export default function ReviewsPage() {
       }
     }
   }, [isAuthenticated, isLoading, fetchReviews]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    
+    const interval = setInterval(() => {
+      fetchReviews(true);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchReviews]);
 
   const handleLabelReview = async (reviewId: string, label: string) => {
     setSaving(true);
@@ -341,7 +365,21 @@ export default function ReviewsPage() {
           <div>
             <h1 className="text-3xl font-bold">Review Queue</h1>
             <p className="text-muted-foreground">Review and label regression findings</p>
+            {error && (
+              <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {error}
+              </p>
+            )}
           </div>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => fetchReviews(true)}
+            disabled={refreshing}
+            title="Refresh reviews"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
         </div>
 
         <Card>

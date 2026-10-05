@@ -12,12 +12,12 @@ settings = get_settings()
 class RegexMatcher(BaseMatcher):
     # Dangerous regex patterns that can cause catastrophic backtracking
     DANGEROUS_PATTERNS = [
-        r'\(.*\)\+',  # (x+)+
-        r'\(.*\)\*',  # (x*)*
-        r'\(.*\)\{',  # (x+){n,m}
-        r'\([^\)]*\+[^\)]*\)\+',  # Nested quantifiers
+        r"\(.*\)\+",  # (x+)+
+        r"\(.*\)\*",  # (x*)*
+        r"\(.*\)\{",  # (x+){n,m}
+        r"\([^\)]*\+[^\)]*\)\+",  # Nested quantifiers
     ]
-    
+
     def _validate_pattern_safety(self, pattern: str) -> None:
         """Check for potentially dangerous regex patterns."""
         import re
@@ -27,7 +27,7 @@ class RegexMatcher(BaseMatcher):
                     f"Regex pattern contains potentially dangerous construct: {dangerous}. "
                     "Nested quantifiers can cause ReDoS (Regular Expression Denial of Service)."
                 )
-    
+
     async def match(
         self, response: str, config: MatcherConfig | None
     ) -> tuple[Verdict, float, list[EvidenceItem]]:
@@ -54,7 +54,7 @@ class RegexMatcher(BaseMatcher):
                 asyncio.to_thread(re.compile, config.pattern),
                 timeout=1.0  # 1 second max for compilation
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return (
                 Verdict.INCONCLUSIVE,
                 0.0,

@@ -12,9 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, require_role
 from app.core.config import get_settings
 from app.core.exceptions import AuthorizationError
-from app.core.security import TokenData
 from app.core.security import TokenData, require_role
-from app.guardrails import GuardrailType, GuardrailSeverity
+from app.guardrails import GuardrailSeverity, GuardrailType
 
 router = APIRouter()
 settings = get_settings()
@@ -110,7 +109,7 @@ async def check_guardrails(messages: list[MCPMessage]) -> list[GuardrailCheckRes
                             confidence=1.0,
                         ))
                         return results
-                    
+
                     if pattern.search(msg.content):
                         results.append(GuardrailCheckResult(
                             passed=False,

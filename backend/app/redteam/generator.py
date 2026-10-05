@@ -204,18 +204,18 @@ Output as JSON: {{"candidates": [...]}}"""
 
     def _get_static_attacks(self, category: TestCaseCategory, count: int) -> list[dict[str, Any]]:
         attacks = STATIC_ATTACK_LIBRARY.get(category, [])
-        
+
         # Determine severity based on category
         if category in (TestCaseCategory.JAILBREAK, TestCaseCategory.PROMPT_INJECTION):
             severity = "high"
-        elif category in (TestCaseCategory.RAG_POISONING, TestCaseCategory.RAG_RETRIEVAL_MANIPULATION, 
+        elif category in (TestCaseCategory.RAG_POISONING, TestCaseCategory.RAG_RETRIEVAL_MANIPULATION,
                           TestCaseCategory.RAG_CONTEXT_MANIPULATION, TestCaseCategory.RAG_DATA_EXPOSURE):
             severity = "critical"
         elif category in (TestCaseCategory.AGENT_TOOL_ABUSE, TestCaseCategory.PRIVILEGE_ESCALATION):
             severity = "high"
         else:
             severity = "medium"
-        
+
         return [
             {
                 "prompt": attack,

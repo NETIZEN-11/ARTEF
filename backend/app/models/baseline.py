@@ -16,7 +16,6 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy import (
-    JSON,
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship

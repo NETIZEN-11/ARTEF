@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from app.api.deps import (
     TokenData,
     get_regression_repo,
+    get_result_repo,
     get_review_label_repo,
     get_review_repo,
-    get_result_repo,
     require_role,
 )
 from app.core.exceptions import ConflictError, NotFoundError
@@ -131,7 +131,7 @@ async def get_review(
         regression = await regression_repo.get(review.regression_id)
         if regression:
             evidence.extend(regression.evidence or [])
-            
+
             # Get the result for more details
             result = await result_repo.get_by_run_and_test_case(review.run_id, regression.test_case_id)
             if result:

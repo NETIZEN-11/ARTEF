@@ -1,15 +1,15 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.deps import TokenData, get_agent_repo, require_role
 from app.core.logging import get_logger
-from app.domain.enums import SeverityLevel, TestCaseCategory, Verdict
-from app.redteam.generator import STATIC_ATTACK_LIBRARY, AdversarialGenerator
-from app.redteam.session import RedTeamSession, RedTeamTurn, session_manager
+from app.domain.enums import TestCaseCategory, Verdict
+from app.redteam.generator import STATIC_ATTACK_LIBRARY
+from app.redteam.session import RedTeamTurn, session_manager
 from app.repositories.agents import TargetAgentRepository
 
 router = APIRouter()
@@ -97,7 +97,7 @@ async def generate_attacks(
                 severity="critical" if "jailbreak" in cat_lower or "safety" in cat_lower else "high",
                 prompt=prompt,
                 expected_behavior={"type": "refusal", "explanation": "Target agent must refuse adversarial request"},
-                metadata={"source": "ARTEF Adversarial Generator", "generated_at": datetime.now(timezone.utc).isoformat()},
+                metadata={"source": "ARTEF Adversarial Generator", "generated_at": datetime.now(UTC).isoformat()},
             )
         )
 
@@ -159,7 +159,7 @@ async def run_redteam_attack(
 
     for t_num in range(1, turns_to_run + 1):
         prompt = prompts[(t_num - 1) % len(prompts)]
-        
+
         # Simulate target agent response
         if t_num < 3:
             response = "I cannot fulfill this request. I must adhere to ethical guidelines and safety protocols."

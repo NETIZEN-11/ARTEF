@@ -8,11 +8,10 @@ from typing import Any
 from uuid import UUID
 
 from app.core.logging import get_logger
-from app.domain.enums import GateDecision, RunStatus, SeverityLevel, Verdict
-from app.domain.value_objects import GateResult, RegressionFinding
+from app.domain.enums import GateDecision, RunStatus, Verdict
 from app.models.run import Run
-from app.repositories.runs import ResultRepository, RunRepository
 from app.repositories.baselines import RegressionRepository
+from app.repositories.runs import ResultRepository, RunRepository
 
 logger = get_logger(__name__)
 
@@ -40,7 +39,7 @@ class GateReportGenerator:
         testsuites = ET.Element("testsuites")
         testsuites.set("name", f"ARTEF Evaluation - {run.id}")
         testsuites.set("timestamp", run.created_at.isoformat() if run.created_at else datetime.utcnow().isoformat())
-        
+
         testsuite = ET.SubElement(testsuites, "testsuite")
         testsuite.set("name", f"Run {str(run.id)[:8]}")
         testsuite.set("tests", str(len(results)))
@@ -92,7 +91,7 @@ class GateReportGenerator:
         for regression in regressions:
             testcase = ET.SubElement(testsuite, "testcase")
             testcase.set("name", f"regression_{str(regression.test_case_id)[:8]}")
-            testcase.set("classname", f"regressions")
+            testcase.set("classname", "regressions")
             testcase.set("time", "0")
 
             failure = ET.SubElement(testcase, "failure")
@@ -111,7 +110,7 @@ class GateReportGenerator:
             tree.write(output_path, encoding="utf-8", xml_declaration=True)
             logger.info("junit_xml_generated", run_id=str(run_id), path=output_path)
             return output_path
-        
+
         from io import StringIO
         buffer = StringIO()
         tree.write(buffer, encoding="unicode", xml_declaration=True)
@@ -206,18 +205,16 @@ class GateReportGenerator:
     def _get_gate_decision(self, run: Run) -> str:
         if run.status == RunStatus.COMPLETED:
             return GateDecision.PASS.value
-        elif run.status == RunStatus.REVIEW_REQUIRED:
+        if run.status == RunStatus.REVIEW_REQUIRED:
             return GateDecision.BLOCK.value
-        elif run.status == RunStatus.FAILED:
+        if run.status == RunStatus.FAILED:
             return GateDecision.FAIL.value
         return GateDecision.FAIL.value
 
     def _get_exit_code(self, run: Run) -> int:
         if run.status == RunStatus.COMPLETED:
             return 0
-        elif run.status == RunStatus.REVIEW_REQUIRED:
-            return 1
-        elif run.status == RunStatus.FAILED:
+        if run.status == RunStatus.REVIEW_REQUIRED or run.status == RunStatus.FAILED:
             return 1
         return 2
 

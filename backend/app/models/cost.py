@@ -1,9 +1,7 @@
 from datetime import datetime
-from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from sqlalchemy import (
-    JSON,
     JSON,
     Column,
     DateTime,
@@ -12,7 +10,6 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
-    Text,
 )
 
 from app.models.user import Base

@@ -130,11 +130,9 @@ class SecurityMonitor:
 
     def _check_token_usage(self):
         """Check for abnormal token usage patterns."""
-        pass
 
     def _check_cost_anomalies(self):
         """Check for cost anomalies."""
-        pass
 
 
 security_monitor = SecurityMonitor()

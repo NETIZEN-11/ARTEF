@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.models.dataset import Dataset, DatasetVersion, DatasetSplit
+from app.models.dataset import Dataset, DatasetSplit, DatasetVersion
 from app.repositories.base import BaseRepository
 
 if TYPE_CHECKING:

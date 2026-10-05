@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from app.domain.enums import Verdict
 from app.domain.value_objects import EvidenceItem, MatcherConfig
@@ -8,7 +7,7 @@ from app.domain.value_objects import EvidenceItem, MatcherConfig
 class BaseMatcher(ABC):
     @abstractmethod
     async def match(
-        self, response: str, config: Optional[MatcherConfig]
+        self, response: str, config: MatcherConfig | None
     ) -> tuple[Verdict, float, list[EvidenceItem]]:
         pass
 

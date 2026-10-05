@@ -3,18 +3,17 @@ from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
-    String,
     JSON,
     Boolean,
     DateTime,
     ForeignKey,
     Index,
+    String,
     Text,
     UniqueConstraint,
     func,
 )
 from sqlalchemy import (
-    JSON,
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship

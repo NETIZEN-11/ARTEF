@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import re
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -36,7 +36,7 @@ class GenerationEvaluator:
         answer: str,
         context: list[str],
     ) -> GenerationEvaluationResult:
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         faithfulness = await self._calculate_faithfulness(answer, context)
         answer_relevance = await self._calculate_answer_relevance(answer, query)
@@ -45,7 +45,7 @@ class GenerationEvaluator:
         factuality = await self._calculate_factuality(answer, context)
         hallucination_rate = max(0.0, 1.0 - faithfulness)
 
-        elapsed = datetime.now(timezone.utc) - start_time
+        elapsed = datetime.now(UTC) - start_time
         execution_time_ms = int(elapsed.total_seconds() * 1000)
 
         return GenerationEvaluationResult(

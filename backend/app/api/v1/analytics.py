@@ -1,12 +1,11 @@
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.api.deps import TokenData, get_run_repo, require_role
-from app.domain.enums import RunStatus
 from app.repositories.runs import RunRepository
 
 router = APIRouter()
@@ -65,16 +64,16 @@ async def get_analytics(
 ):
     days_map = {"24h": 1, "7d": 7, "30d": 30, "90d": 90, "1y": 365}
     days = days_map.get(time_range, 7)
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.now(UTC) - timedelta(days=days)
 
     runs = await run_repo.list(skip=0, limit=500, filters={})
-    
+
     # Filter runs by cutoff
     filtered_runs = []
     for r in runs:
         r_created = r.created_at
         if r_created.tzinfo is None:
-            r_created = r_created.replace(tzinfo=timezone.utc)
+            r_created = r_created.replace(tzinfo=UTC)
         if r_created >= cutoff:
             filtered_runs.append(r)
 
@@ -115,7 +114,7 @@ async def get_analytics(
     if not sorted_days:
         # Default placeholder dates for nice visualization
         for i in range(min(days, 7), -1, -1):
-            d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
+            d = (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d")
             sorted_days.append(d)
 
     runs_over_time = [{"date": d, "count": runs_by_day.get(d, 0)} for d in sorted_days]

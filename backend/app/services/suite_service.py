@@ -236,7 +236,7 @@ class SuiteService:
         MAX_YAML_SIZE = 5 * 1024 * 1024  # 5MB
         if len(yaml_content) > MAX_YAML_SIZE:
             raise ValidationError(f"YAML file too large (max {MAX_YAML_SIZE / 1024 / 1024}MB)")
-        
+
         try:
             # Use safe_load with resource limits
             data = yaml.safe_load(yaml_content)

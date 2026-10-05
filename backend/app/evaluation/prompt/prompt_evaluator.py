@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from app.core.logging import get_logger
 
@@ -107,10 +106,9 @@ class PromptEvaluator:
 
         if avg_length < 20:
             return 0.9
-        elif avg_length < 30:
+        if avg_length < 30:
             return 0.7
-        else:
-            return 0.5
+        return 0.5
 
     async def _evaluate_specificity(self, content: str) -> float:
         specific_indicators = [
@@ -151,9 +149,8 @@ class PromptEvaluator:
 
         if token_estimate < 100:
             return 1.0
-        elif token_estimate < 500:
+        if token_estimate < 500:
             return 0.8
-        elif token_estimate < 1000:
+        if token_estimate < 1000:
             return 0.6
-        else:
-            return 0.4
+        return 0.4

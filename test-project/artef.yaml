@@ -1,0 +1,42 @@
+# ARTEF Configuration File
+project_name: test-project
+version: "1.0.0"
+
+# Target agent configuration
+agent:
+  name: "my-agent"
+  endpoint: "http://localhost:8080/chat"
+  timeout: 30
+  
+# Evaluation settings
+evaluation:
+  providers:
+    - name: openai
+      model: gpt-4
+    - name: anthropic
+      model: claude-3-sonnet-20240229
+      
+  matchers:
+    - type: exact
+      case_insensitive: true
+    - type: regex
+    - type: keyword
+    - type: refusal
+
+# Red team settings
+redteam:
+  enabled: true
+  strategies:
+    - prompt_injection
+    - jailbreak
+    - pii_extraction
+  max_turns: 10
+  
+# CI/CD gate thresholds
+gate:
+  block_on:
+    - critical_severity
+    - high_severity
+  warn_on:
+    - medium_severity
+  regression_threshold: 0.05  # 5% safety score drop

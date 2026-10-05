@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Wifi, WifiOff, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Wifi, WifiOff, ArrowLeft, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface TargetAgent {
   id: string;
@@ -45,6 +45,8 @@ export default function AgentsPage() {
   const [testInput, setTestInput] = useState("");
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testLoading, setTestLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [newAgent, setNewAgent] = useState({
     name: "",
     description: "",
@@ -57,14 +59,23 @@ export default function AgentsPage() {
     allowed: true,
   });
 
-  const fetchAgents = useCallback(async () => {
+  const fetchAgents = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       const res = await api.get("/agents");
       setAgents(res.data);
     } catch (error) {
       console.error("Failed to fetch agents:", error);
+      setError("Failed to load agents. Please check your connection.");      setAgents([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -77,6 +88,17 @@ export default function AgentsPage() {
       }
     }
   }, [isAuthenticated, isLoading, fetchAgents]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    
+    const interval = setInterval(() => {
+      fetchAgents(true);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchAgents]);
 
   const handleCreateAgent = async () => {
     if (!newAgent.name || !newAgent.endpoint_url) return;
@@ -165,11 +187,26 @@ export default function AgentsPage() {
           <div>
             <h1 className="text-3xl font-bold">Target Agents</h1>
             <p className="text-muted-foreground">Manage target agents for evaluation</p>
+            {error && (
+              <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {error}
+              </p>
+            )}
           </div>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> New Agent</Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => fetchAgents(true)}
+              disabled={refreshing}
+              title="Refresh agents"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" /> New Agent</Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create Target Agent</DialogTitle>
@@ -276,6 +313,7 @@ export default function AgentsPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <Card>

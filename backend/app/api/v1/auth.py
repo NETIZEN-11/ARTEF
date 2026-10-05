@@ -151,7 +151,7 @@ async def register(
     from app.core.config import get_settings
 
     settings = get_settings()
-    
+
     # SECURITY: In production, strictly control registration
     if settings.is_production:
         # Check if open registration is explicitly allowed via feature flag
@@ -174,13 +174,13 @@ async def register(
         raise HTTPException(status_code=400, detail="Password must contain at least one digit")
     if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in request.password):
         raise HTTPException(status_code=400, detail="Password must contain at least one special character")
-    
+
     # Check for username/email in password
     if request.username.lower() in request.password.lower():
         raise HTTPException(status_code=400, detail="Password must not contain username")
     if request.email.split("@")[0].lower() in request.password.lower():
         raise HTTPException(status_code=400, detail="Password must not contain email")
-    
+
     # Check for common weak passwords
     COMMON_WEAK_PASSWORDS = {
         "password123", "password12", "qwerty123", "admin123", "welcome123",

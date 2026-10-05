@@ -77,15 +77,21 @@ include = ["app*"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+exclude = ["migrations", ".venv", "dist", "build"]
+
+[tool.ruff.lint]
 select = [
     "E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "T20", "PIE", "PT", "Q", "ARG", "PTH", "ERA", "PL", "TRY", "NPY", "RUF", "RET", "PERF", "ICN",
 ]
-ignore = []
+ignore = [
+    "B008",  # FastAPI Depends() in function defaults is the correct pattern
+]
 fixable = ["ALL"]
 unfixable = []
-exclude = ["migrations", ".venv", "dist", "build"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

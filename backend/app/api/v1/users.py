@@ -100,7 +100,7 @@ async def update_current_user_profile(
         raise NotFoundError("User", current_user.sub)
 
     update_data = update.model_dump(exclude_unset=True)
-    if "email" in update_data and update_data["email"]:
+    if update_data.get("email"):
         existing = await user_repo.get_by_email(update_data["email"])
         if existing and str(existing.id) != str(user.id):
             raise ConflictError("Email already in use")

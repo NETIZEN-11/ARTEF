@@ -1,11 +1,12 @@
 import os
+import types
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
-import types
-import bcrypt
+
 if not hasattr(bcrypt, "__about__"):
     bcrypt.__about__ = types.SimpleNamespace(__version__="4.0.0")
 if not getattr(bcrypt, "_has_72_patch", False):
@@ -70,14 +71,14 @@ def _resolve_key_path(path: str) -> str:
     """
     if not path:
         return path
-    
+
     # Normalize the path to prevent traversal attacks
     path = os.path.normpath(path)
-    
+
     # SECURITY: Block path traversal attempts
     if ".." in path or path.startswith("/etc") or path.startswith("\\\\"):
         raise ValueError(f"Invalid key path (potential path traversal): {path}")
-    
+
     # If absolute path, verify it exists and is readable
     if os.path.isabs(path):
         if not os.path.exists(path):
@@ -86,29 +87,28 @@ def _resolve_key_path(path: str) -> str:
         if not os.path.isfile(path):
             raise ValueError(f"Key path must be a regular file: {path}")
         return path
-    
+
     # For relative paths, only search within project root
     try:
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-        
+
         # Try relative to project root
         candidate = os.path.normpath(os.path.join(project_root, path))
-        
+
         # SECURITY: Ensure resolved path is still within project root
         if not candidate.startswith(project_root):
             raise ValueError(f"Key path escapes project root: {path}")
-        
+
         if os.path.exists(candidate) and os.path.isfile(candidate):
             return candidate
-        
+
         # Try app/core/keys directory as fallback
         candidate2 = os.path.normpath(os.path.join(project_root, "backend", "app", "core", "keys", os.path.basename(path)))
         if candidate2.startswith(project_root) and os.path.exists(candidate2) and os.path.isfile(candidate2):
             return candidate2
-            
+
     except Exception as e:
         raise ValueError(f"Failed to resolve key path: {e}")
-        pass
     # Fallback to keys directory next to this file
     keys_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keys")
     candidate3 = os.path.join(keys_dir, os.path.basename(path))
@@ -223,7 +223,7 @@ async def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     token_data = decode_token(token)
     if security_scopes.scopes:
         for scope in security_scopes.scopes:

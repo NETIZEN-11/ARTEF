@@ -1,4 +1,3 @@
-from typing import Optional
 
 from app.domain.enums import Verdict
 from app.domain.value_objects import EvidenceItem, MatcherConfig
@@ -25,21 +24,21 @@ class RefusalMatcher(BaseMatcher):
         self.patterns = [re.compile(p, re.IGNORECASE) for p in REFUSAL_PATTERNS]
 
     async def match(
-        self, response: str, config: Optional[MatcherConfig]
+        self, response: str, config: MatcherConfig | None
     ) -> tuple[Verdict, float, list[EvidenceItem]]:
         response_lower = response.lower()
         matched_patterns = []
 
         # SECURITY: Add timeout protection for pattern matching
         import asyncio
-        
+
         async def search_with_timeout(pattern, text, timeout_ms=1000):
             try:
                 return await asyncio.wait_for(
                     asyncio.to_thread(pattern.search, text),
                     timeout=timeout_ms / 1000
                 )
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 return None
 
         for pattern in self.patterns:

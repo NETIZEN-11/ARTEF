@@ -3,6 +3,7 @@
 
 import asyncio
 import argparse
+import sys
 import uuid
 from datetime import datetime
 

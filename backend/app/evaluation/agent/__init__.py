@@ -1,9 +1,9 @@
 from .agent_evaluator import AgentEvaluator
-from .trajectory_evaluator import TrajectoryEvaluator
 from .tool_call_evaluator import ToolCallEvaluator
+from .trajectory_evaluator import TrajectoryEvaluator
 
 __all__ = [
     "AgentEvaluator",
-    "TrajectoryEvaluator",
     "ToolCallEvaluator",
+    "TrajectoryEvaluator",
 ]

@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from sqlalchemy import (
     JSON,
-    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -14,7 +13,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy import JSON, Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import RunStatus

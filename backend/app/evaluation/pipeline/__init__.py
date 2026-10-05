@@ -1,8 +1,8 @@
 from app.evaluation.pipeline.engine import EvaluationPipeline
 from app.evaluation.pipeline.models import (
     PipelineConfig,
-    PipelineStatus,
     PipelineResult,
+    PipelineStatus,
     PipelineStep,
     PipelineStepStatus,
 )
@@ -10,8 +10,8 @@ from app.evaluation.pipeline.models import (
 __all__ = [
     "EvaluationPipeline",
     "PipelineConfig",
-    "PipelineStatus",
     "PipelineResult",
+    "PipelineStatus",
     "PipelineStep",
     "PipelineStepStatus",
 ]

@@ -21,7 +21,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Plus, TrendingUp, TrendingDown, Target, AlertTriangle, CheckCircle, DollarSign, Clock } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Target, AlertTriangle, CheckCircle, DollarSign, Clock, RefreshCw, AlertCircle } from "lucide-react";
 
 interface RunSummary {
   id: string;
@@ -61,21 +61,54 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentRuns, setRecentRuns] = useState<RunSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
+      setError(null);
+      
+      // Fetch real data from backend
       const [statsRes, runsRes] = await Promise.all([
-        api.get("/runs/stats"),
-        api.get("/runs?limit=5"),
+        api.get("/runs/stats").catch(() => ({ data: getEmptyStats() })),
+        api.get("/runs?limit=5&sort=created_at:desc").catch(() => ({ data: [] })),
       ]);
+      
       setStats(statsRes.data);
-      setRecentRuns(runsRes.data);
+      setRecentRuns(Array.isArray(runsRes.data) ? runsRes.data : runsRes.data.items || []);
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
+      setError("Failed to load dashboard data. Please check your connection and try again.");
+      // Set empty state on complete failure
+      setStats(getEmptyStats());
+      setRecentRuns([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
+
+  // Helper function for empty stats
+  const getEmptyStats = (): Stats => ({
+    total_runs: 0,
+    pass_rate: 0,
+    total_regressions: 0,
+    critical_findings: 0,
+    review_queue_count: 0,
+    avg_runtime: 0,
+    total_cost: 0,
+    high_count: 0,
+    medium_count: 0,
+    low_count: 0,
+    pass_rate_trend: [],
+    regression_trend: [],
+    cost_trend: [],
+  });
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
 
   useEffect(() => {
     if (!isLoading) {
@@ -86,6 +119,16 @@ export default function DashboardPage() {
       }
     }
   }, [isAuthenticated, isLoading, fetchData]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isAuthenticated && !loading) {
+        fetchData();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchData]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -133,11 +176,32 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground">Overview of your evaluation runs and system health</p>
           </div>
-          <Button onClick={() => window.location.href = "/runs/new"}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Evaluation
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={() => window.location.href = "/runs/new"}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Evaluation
+            </Button>
+          </div>
         </div>
+
+        {error && (
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                <p>{error}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>

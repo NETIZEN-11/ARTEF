@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { api } from "@/lib/api";
 import { formatDate, formatCost, getStatusColor } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
-import { Plus, Filter, Download } from "lucide-react";
+import { Plus, Filter, Download, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface RunSummary {
   id: string;
@@ -41,23 +41,40 @@ export default function RunsPage() {
   const [page, setPage] = useState(1);
   const [totalPages] = useState(1);
   const [filters, setFilters] = useState({ status: "", agent_id: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchRuns = useCallback(async () => {
-    setLoading(true);
+  const fetchRuns = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    
     try {
       const params = new URLSearchParams({
         skip: ((page - 1) * 20).toString(),
         limit: "20",
+        sort: "created_at:desc",
       });
       if (filters.status) params.append("status", filters.status);
       if (filters.agent_id) params.append("target_agent_id", filters.agent_id);
 
       const response = await api.get(`/runs?${params.toString()}`);
-      setRuns(response.data);
+      const data = Array.isArray(response.data) ? response.data : response.data.items || [];
+      setRuns(data);
+      
+      if (data.length === 0 && !isRefresh) {
+        setError("No runs found. Create your first run to get started.");
+      }
     } catch (error) {
       console.error("Failed to fetch runs:", error);
+      setError("Failed to load runs. Please check your connection.");
+      setRuns([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [page, filters]);
 
@@ -70,6 +87,17 @@ export default function RunsPage() {
       }
     }
   }, [isAuthenticated, isLoading, router, fetchRuns]);
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated || loading) return;
+    
+    const interval = setInterval(() => {
+      fetchRuns(true);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, fetchRuns]);
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -88,11 +116,27 @@ export default function RunsPage() {
           <div>
             <h1 className="text-3xl font-bold">Evaluation Runs</h1>
             <p className="text-muted-foreground">View and manage evaluation runs</p>
+            {error && (
+              <p className="text-sm text-destructive mt-1 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {error}
+              </p>
+            )}
           </div>
-          <Button onClick={() => window.location.href = "/runs/new"}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Evaluation
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => fetchRuns(true)}
+              disabled={refreshing}
+              title="Refresh runs"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            </Button>
+            <Button onClick={() => window.location.href = "/runs/new"}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Evaluation
+            </Button>
+          </div>
         </div>
 
         <Card>

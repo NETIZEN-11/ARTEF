@@ -1,10 +1,9 @@
 """Circuit Breaker pattern implementation for external provider failures."""
 
 import asyncio
-import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any, TypeVar
 
@@ -68,13 +67,13 @@ class CircuitBreaker:
                 result = await func(*args, **kwargs)
             else:
                 result = func(*args, **kwargs)
-            
+
             await self._on_success()
             return result
-            
+
         except self.config.excluded_exceptions:
             raise
-        except Exception as e:
+        except Exception:
             await self._on_failure()
             raise
 
@@ -118,7 +117,7 @@ class CircuitBreaker:
                     await self._transition_to_open()
 
     async def _transition_to_open(self):
-        logger.warning("circuit_breaker_opened", name=self.name, 
+        logger.warning("circuit_breaker_opened", name=self.name,
                       consecutive_failures=self.stats.consecutive_failures)
         self.state = CircuitState.OPEN
         self._record_state_change(CircuitState.OPEN)
@@ -131,7 +130,7 @@ class CircuitBreaker:
 
     def _record_state_change(self, new_state: CircuitState):
         self.stats.state_changes.append({
-            "from_state": self.state.value if hasattr(self, '_prev_state') else "unknown",
+            "from_state": self.state.value if hasattr(self, "_prev_state") else "unknown",
             "to_state": new_state.value,
             "timestamp": datetime.utcnow().isoformat(),
         })
@@ -147,7 +146,7 @@ class CircuitBreaker:
             "consecutive_failures": self.stats.consecutive_failures,
             "consecutive_successes": self.stats.consecutive_successes,
             "success_rate": (
-                self.stats.successful_calls / self.stats.total_calls 
+                self.stats.successful_calls / self.stats.total_calls
                 if self.stats.total_calls > 0 else 0
             ),
             "last_failure": self.stats.last_failure_time.isoformat() if self.stats.last_failure_time else None,
@@ -165,19 +164,18 @@ class CircuitBreaker:
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit breaker is open and call is rejected."""
-    pass
 
 
 class CircuitBreakerRegistry:
     """Registry for managing multiple circuit breakers."""
-    
+
     def __init__(self):
         self._breakers: dict[str, CircuitBreaker] = {}
         self._lock = asyncio.Lock()
 
     async def get_or_create(
-        self, 
-        name: str, 
+        self,
+        name: str,
         config: CircuitBreakerConfig | None = None
     ) -> CircuitBreaker:
         async with self._lock:

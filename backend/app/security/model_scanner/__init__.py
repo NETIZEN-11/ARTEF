@@ -1,21 +1,21 @@
-from .scanner import ModelScanner
 from .detectors import (
-    PickleDetector,
+    HuggingFaceDetector,
     JoblibDetector,
+    ONNXDetector,
+    PickleDetector,
     PyTorchDetector,
     TensorFlowDetector,
-    ONNXDetector,
-    HuggingFaceDetector,
 )
 from .report import ScanReport
+from .scanner import ModelScanner
 
 __all__ = [
-    "ModelScanner",
-    "PickleDetector",
-    "JoblibDetector",
-    "PyTorchDetector",
-    "TensorFlowDetector",
-    "ONNXDetector",
     "HuggingFaceDetector",
+    "JoblibDetector",
+    "ModelScanner",
+    "ONNXDetector",
+    "PickleDetector",
+    "PyTorchDetector",
     "ScanReport",
+    "TensorFlowDetector",
 ]

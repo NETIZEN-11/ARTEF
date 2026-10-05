@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from app.core.logging import get_logger
 
@@ -74,7 +73,7 @@ class ToolCallEvaluator:
 
         actual_tool = actual.get("tool_name", "")
         actual_args = actual.get("arguments", {})
-        error = actual.get("error", None)
+        error = actual.get("error")
 
         correct_tool = expected_tool == actual_tool
 

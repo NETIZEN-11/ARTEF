@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_async_session, require_role
+from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.core.security import TokenData
@@ -16,29 +16,24 @@ from app.domain.matrix import (
     MatrixConfiguration,
     MatrixExecutionSummary,
 )
-from app.models.matrix import EvaluationMatrix as EvaluationMatrixModel, EvaluationMatrixCell as EvaluationMatrixCellModel
-from app.models.run import Run
-from app.models.target_agent import TargetAgent
-from app.models.test_suite import TestCase
-from app.repositories.matrix import EvaluationMatrixCellRepository, EvaluationMatrixRepository
-from app.repositories.runs import ExecutionRepository, ResultRepository, RunRepository
-from app.repositories.suites import TestCaseRepository, TestSuiteRepository
-from app.repositories.agents import TargetAgentRepository
-from app.repositories.baselines import (
-    BaselineRepository,
-    BaselineItemRepository,
-    RegressionRepository,
-    ReviewQueueRepository,
-)
-from app.services.execution_service import ExecutionService
-from app.services.scoring_service import MockScoringService, ScoringService
 from app.evaluation.gate.evaluator import GateEvaluator
 from app.evaluation.regression.detector import RegressionDetector
 from app.evaluation.severity.classifier import SeverityClassifier
-
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.config import get_settings
+from app.models.matrix import EvaluationMatrix as EvaluationMatrixModel
+from app.models.matrix import EvaluationMatrixCell as EvaluationMatrixCellModel
+from app.models.run import Run
+from app.repositories.agents import TargetAgentRepository
+from app.repositories.baselines import (
+    BaselineItemRepository,
+    BaselineRepository,
+    RegressionRepository,
+    ReviewQueueRepository,
+)
+from app.repositories.matrix import EvaluationMatrixCellRepository, EvaluationMatrixRepository
+from app.repositories.runs import ExecutionRepository, ResultRepository, RunRepository
+from app.repositories.suites import TestCaseRepository, TestSuiteRepository
+from app.services.execution_service import ExecutionService
+from app.services.scoring_service import MockScoringService, ScoringService
 
 settings = get_settings()
 logger = get_logger(__name__)
@@ -165,13 +160,13 @@ async def get_matrix_summary(
     """Get execution summary for matrix."""
     matrix_repo = EvaluationMatrixRepository(session)
     cell_repo = EvaluationMatrixCellRepository(session)
-    
+
     matrix = await matrix_repo.get_with_cells(matrix_id)
     if not matrix:
         raise NotFoundError("EvaluationMatrix", str(matrix_id))
 
     cells = await cell_repo.list_by_matrix(matrix_id)
-    
+
     completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
     failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
     queued = sum(1 for c in cells if c.status == RunStatus.QUEUED)
@@ -226,7 +221,7 @@ async def execute_matrix(
     await session.flush()
 
     cells = await cell_repo.list_by_matrix(matrix_id)
-    
+
     for cell in cells:
         if cell.status != RunStatus.QUEUED:
             continue
@@ -241,10 +236,10 @@ async def execute_matrix(
     # Update matrix status
     completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
     failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
-    
+
     matrix.completed_cells = completed
     matrix.failed_cells = failed
-    
+
     if failed > 0 and completed + failed == len(cells):
         matrix.status = RunStatus.FAILED
     elif completed == len(cells):
@@ -282,7 +277,7 @@ async def _execute_cell(
             raise NotFoundError("TestCase", str(cell.test_case_id))
 
         config = cell.configuration
-        
+
         agent_id = UUID(config.get("target_agent_id")) if config.get("target_agent_id") else None
         if not agent_id:
             agents = await agent_repo.list_by_suite(matrix.suite_id)

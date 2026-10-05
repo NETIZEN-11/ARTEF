@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -10,7 +10,6 @@ from app.evaluation.cost.cost_models import (
     CostCategory,
     CostEntry,
     CostSummary,
-    CostTrend,
 )
 from app.models.cost import CostEntryModel
 
@@ -172,7 +171,7 @@ class CostTracker:
         run_ids: list[UUID] = None,
     ) -> CostSummary:
         async with get_async_session() as session:
-            from sqlalchemy import select, func, and_
+            from sqlalchemy import and_, func, select
 
             query = select(
                 func.sum(CostEntryModel.cost_usd).label("total_cost"),

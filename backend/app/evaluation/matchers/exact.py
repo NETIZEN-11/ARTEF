@@ -1,4 +1,3 @@
-from typing import Optional
 
 from app.core.config import get_settings
 from app.domain.enums import Verdict
@@ -10,7 +9,7 @@ settings = get_settings()
 
 class ExactMatcher(BaseMatcher):
     async def match(
-        self, response: str, config: Optional[MatcherConfig]
+        self, response: str, config: MatcherConfig | None
     ) -> tuple[Verdict, float, list[EvidenceItem]]:
         if not config or not config.pattern:
             return (

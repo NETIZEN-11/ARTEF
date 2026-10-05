@@ -6,11 +6,13 @@ from uuid import uuid4
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     String,
     Text,
     func,
+)
+from sqlalchemy import (
+    Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 

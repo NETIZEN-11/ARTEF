@@ -1,12 +1,11 @@
+import ipaddress
+import socket
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-
-import ipaddress
-import socket
-from urllib.parse import urlparse
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -29,16 +28,16 @@ def _validate_resolved_ip(host: str) -> None:
     try:
         resolved_ip = socket.gethostbyname(host)
         ip = ipaddress.ip_address(resolved_ip)
-        
+
         # Block private IPs if configured
         if settings.TARGET_AGENT_BLOCK_PRIVATE_IPS:
             if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
                 raise ValueError(f"Resolved IP {resolved_ip} is private/reserved")
-        
+
         # Additional check for localhost in production
         if settings.is_production and resolved_ip in ("127.0.0.1", "::1", "localhost"):
-            raise ValueError(f"Localhost access blocked in production")
-            
+            raise ValueError("Localhost access blocked in production")
+
     except socket.gaierror as e:
         raise ValueError(f"Hostname resolution failed: {e}")
 
@@ -52,7 +51,7 @@ def validate_target_url(url: str) -> None:
     allowed = settings.allowed_hosts_list
     if allowed and parsed.hostname not in allowed:
         raise ValueError(f"Host {parsed.hostname} not in allowed hosts")
-    
+
     # Initial validation - note: must re-validate before actual connection due to DNS rebinding
     if settings.TARGET_AGENT_BLOCK_PRIVATE_IPS and _is_private_ip(parsed.hostname):
         raise ValueError(f"Private IP access blocked: {parsed.hostname}")
@@ -110,7 +109,7 @@ class HTTPTargetAgentProvider(TargetAgentProvider):
             parsed = urlparse(self.endpoint_url)
             if parsed.hostname:
                 _validate_resolved_ip(parsed.hostname)
-            
+
             response = await self.client.post(self.endpoint_url, json=request_body)
             response.raise_for_status()
             return self._extract_response(response.json())

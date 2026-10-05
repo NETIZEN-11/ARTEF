@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, UploadFile, File
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_async_session, require_role
 from app.core.config import get_settings
@@ -11,11 +11,12 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.core.security import TokenData
 from app.domain.enums import DatasetStatus as DatasetStatusEnum
-from app.models.dataset import Dataset, DatasetVersion, DatasetSplit
-from app.repositories.dataset import DatasetRepository, DatasetVersionRepository, DatasetSplitRepository
-from app.repositories.suites import TestSuiteRepository
-
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.dataset import Dataset, DatasetVersion
+from app.repositories.dataset import (
+    DatasetRepository,
+    DatasetSplitRepository,
+    DatasetVersionRepository,
+)
 
 settings = get_settings()
 logger = get_logger(__name__)

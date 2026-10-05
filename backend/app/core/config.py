@@ -81,10 +81,10 @@ class Settings(BaseSettings):
     S3_REGION: str = "us-east-1"
 
     LOCAL_STORAGE_PATH: str = "./storage"
-    
+
     # Storage backend selection
     STORAGE_BACKEND: str = "local"  # Options: "local", "s3"
-    
+
     @field_validator("S3_ACCESS_KEY", "S3_SECRET_KEY")
     @classmethod
     def validate_s3_credentials(cls, v: str, info) -> str:

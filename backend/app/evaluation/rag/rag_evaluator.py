@@ -1,18 +1,17 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from app.core.logging import get_logger
-from app.evaluation.rag.retrieval_evaluator import (
-    RetrievalEvaluator,
-    RetrievalEvaluationResult,
-    RetrievalMetrics,
-)
 from app.evaluation.rag.generation_evaluator import (
-    GenerationEvaluator,
     GenerationEvaluationResult,
+    GenerationEvaluator,
     GenerationMetrics,
+)
+from app.evaluation.rag.retrieval_evaluator import (
+    RetrievalEvaluationResult,
+    RetrievalEvaluator,
+    RetrievalMetrics,
 )
 from app.rag.retriever import Retriever
 

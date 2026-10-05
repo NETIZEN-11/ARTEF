@@ -16,7 +16,7 @@ from app.domain.value_objects import (
     MatcherConfig,
     ScoringResult,
 )
-from app.evaluation.cost.cost_tracker import CostTracker, CostCategory
+from app.evaluation.cost.cost_tracker import CostCategory, CostTracker
 from app.evaluation.judges.fallback_judge import FallbackJudge
 from app.evaluation.judges.llm_judge import LLMJudge
 from app.evaluation.matchers.exact import ExactMatcher
@@ -117,8 +117,9 @@ class ScoringService:
 
             # FIXED: Use database-level atomic increment to prevent race conditions
             from sqlalchemy import update
+
             from app.models.run import Run as RunModel
-            
+
             if scoring_result.verdict == Verdict.PASS:
                 await self.execution_repo.session.execute(
                     update(RunModel).where(RunModel.id == run_id).values(passed_count=RunModel.passed_count + 1)

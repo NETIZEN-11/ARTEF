@@ -15,7 +15,6 @@ from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.repositories.baselines import RegressionRepository, ReviewQueueRepository
 from app.repositories.runs import ResultRepository, RunRepository
-from datetime import datetime
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -67,11 +66,11 @@ async def list_reports(
     In a production system, you would store generated reports in a separate table.
     """
     from app.domain.enums import RunStatus
-    
+
     # Get completed runs
     runs = await run_repo.list(skip=skip, limit=limit, filters={})
     completed_runs = [r for r in runs if r.status == RunStatus.COMPLETED]
-    
+
     reports = []
     for run in completed_runs[:limit]:
         reports.append(ReportResponse(
@@ -84,7 +83,7 @@ async def list_reports(
             generated_by=run.created_by,
             content=None
         ))
-    
+
     return reports
 
 

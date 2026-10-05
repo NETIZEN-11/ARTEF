@@ -117,7 +117,7 @@ async def get_stats(
     runs = await run_repo.list(skip=0, limit=200, filters={})
     pending_reviews = await review_repo.list_pending()
     review_queue_count = len(pending_reviews)
-    
+
     if not runs:
         return StatsResponse(
             total_runs=0,
@@ -134,31 +134,31 @@ async def get_stats(
             regression_trend=[],
             cost_trend=[]
         )
-    
+
     # Calculate aggregated stats
     total_runs = len(runs)
     total_tests = sum(r.total_tests for r in runs if r.total_tests)
     total_passed = sum(r.passed_count for r in runs if r.passed_count)
     pass_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0.0
-    
+
     total_regressions = sum(r.regression_count for r in runs if r.regression_count)
     critical_findings = sum(r.critical_count for r in runs if r.critical_count)
     high_count = sum(r.high_count for r in runs if r.high_count)
     medium_count = sum(r.medium_count for r in runs if r.medium_count)
     low_count = sum(r.low_count for r in runs if r.low_count)
-    
+
     total_latency = sum(r.total_latency_ms for r in runs if r.total_latency_ms)
     avg_runtime = total_latency / total_runs if total_runs > 0 else 0.0
-    
+
     total_cost = sum(r.total_cost_usd for r in runs if r.total_cost_usd)
-    
+
     # Calculate trends (last 7 completed runs)
     completed_runs = [r for r in runs if r.status == RunStatus.COMPLETED][-7:]
-    
+
     pass_rate_trend = []
     regression_trend = []
     cost_trend = []
-    
+
     for run in completed_runs:
         if run.total_tests > 0:
             pass_rate_trend.append((run.passed_count / run.total_tests) * 100)
@@ -166,7 +166,7 @@ async def get_stats(
             pass_rate_trend.append(0.0)
         regression_trend.append(run.regression_count if run.regression_count else 0)
         cost_trend.append(run.total_cost_usd if run.total_cost_usd else 0.0)
-    
+
     return StatsResponse(
         total_runs=total_runs,
         pass_rate=pass_rate,

@@ -1,4 +1,3 @@
-from typing import Optional
 
 from app.domain.enums import Verdict
 from app.domain.value_objects import EvidenceItem, MatcherConfig
@@ -7,7 +6,7 @@ from app.evaluation.matchers.base import BaseMatcher
 
 class KeywordMatcher(BaseMatcher):
     async def match(
-        self, response: str, config: Optional[MatcherConfig]
+        self, response: str, config: MatcherConfig | None
     ) -> tuple[Verdict, float, list[EvidenceItem]]:
         if not config or not config.keywords:
             return (
@@ -18,7 +17,7 @@ class KeywordMatcher(BaseMatcher):
 
         # Support case-sensitive matching via config flag (default: case-insensitive)
         case_sensitive = getattr(config, "case_sensitive", False)
-        
+
         matched_keywords = []
         missing_keywords = []
 
@@ -28,7 +27,7 @@ class KeywordMatcher(BaseMatcher):
                 found = keyword in response
             else:
                 found = keyword.lower() in response.lower()
-            
+
             if found:
                 matched_keywords.append(keyword)
             else:

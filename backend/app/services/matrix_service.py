@@ -1,33 +1,34 @@
 from datetime import datetime
-from typing import Any
-from uuid import UUID, uuid4
-
-from sqlalchemy import select
+from uuid import UUID
 
 from app.core.config import get_settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.domain.enums import RunStatus
-from app.domain.matrix import EvaluationCell, EvaluationMatrix, MatrixConfiguration, MatrixExecutionSummary
-from app.models.matrix import EvaluationMatrix as EvaluationMatrixModel, EvaluationMatrixCell as EvaluationMatrixCellModel
-from app.models.run import Run
-from app.models.target_agent import TargetAgent
-from app.models.test_suite import TestCase
-from app.repositories.matrix import EvaluationMatrixCellRepository, EvaluationMatrixRepository
-from app.repositories.runs import RunRepository
-from app.repositories.suites import TestCaseRepository, TestSuiteRepository
-from app.repositories.agents import TargetAgentRepository
-from app.services.execution_service import ExecutionService
-from app.services.scoring_service import MockScoringService, ScoringService
+from app.domain.matrix import (
+    EvaluationCell,
+    EvaluationMatrix,
+    MatrixConfiguration,
+    MatrixExecutionSummary,
+)
 from app.evaluation.gate.evaluator import GateEvaluator
 from app.evaluation.regression.detector import RegressionDetector
 from app.evaluation.severity.classifier import SeverityClassifier
+from app.models.matrix import EvaluationMatrix as EvaluationMatrixModel
+from app.models.matrix import EvaluationMatrixCell as EvaluationMatrixCellModel
+from app.models.run import Run
+from app.repositories.agents import TargetAgentRepository
 from app.repositories.baselines import (
-    BaselineRepository,
     BaselineItemRepository,
+    BaselineRepository,
     RegressionRepository,
     ReviewQueueRepository,
 )
+from app.repositories.matrix import EvaluationMatrixCellRepository, EvaluationMatrixRepository
+from app.repositories.runs import RunRepository
+from app.repositories.suites import TestCaseRepository, TestSuiteRepository
+from app.services.execution_service import ExecutionService
+from app.services.scoring_service import MockScoringService, ScoringService
 
 settings = get_settings()
 logger = get_logger(__name__)
@@ -151,7 +152,7 @@ class MatrixService:
             return None
 
         cells = await self.cell_repo.list_by_matrix(matrix_id)
-        
+
         completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
         failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
         queued = sum(1 for c in cells if c.status == RunStatus.QUEUED)
@@ -187,7 +188,7 @@ class MatrixService:
         await self.matrix_repo.session.flush()
 
         cells = await self.cell_repo.list_by_matrix(matrix_id)
-        
+
         for cell in cells:
             if cell.status != RunStatus.QUEUED:
                 continue
@@ -197,10 +198,10 @@ class MatrixService:
         # Update matrix status
         completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
         failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
-        
+
         matrix.completed_cells = completed
         matrix.failed_cells = failed
-        
+
         if failed > 0 and completed + failed == len(cells):
             matrix.status = RunStatus.FAILED
         elif completed == len(cells):
@@ -226,7 +227,7 @@ class MatrixService:
 
             # Create a run for this cell
             config = cell.configuration
-            
+
             # Get target agent from configuration or use default
             agent_id = UUID(config.get("target_agent_id")) if config.get("target_agent_id") else None
             if not agent_id:
@@ -265,11 +266,11 @@ class MatrixService:
             # FIXED: Create proper repository instances for execution
             from app.repositories.runs import ExecutionRepository, ResultRepository
             from app.services.cost_tracking import CostTracker
-            
+
             exec_repo = ExecutionRepository(self.cell_repo.session)
             result_repo = ResultRepository(self.cell_repo.session)
             cost_tracker = CostTracker(self.cell_repo.session)
-            
+
             execution_service = ExecutionService(
                 self.run_repo, exec_repo, result_repo, self.agent_repo, self.case_repo, cost_tracker
             )

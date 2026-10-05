@@ -1,11 +1,11 @@
-import app.core.sqlite_compat  # noqa: F401 – must be first to patch PG dialect for SQLite
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+import app.core.sqlite_compat
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.database import close_db, init_db

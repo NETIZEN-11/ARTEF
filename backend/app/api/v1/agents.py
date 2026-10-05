@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 
 from app.api.deps import TokenData, get_agent_repo, require_role
 from app.core.exceptions import ConflictError, NotFoundError
@@ -76,6 +76,8 @@ def _sanitize_agent_response(agent, current_user: TokenData) -> dict:
 
 
 class TargetAgentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: UUID
     name: str
     description: str | None = None
@@ -90,9 +92,6 @@ class TargetAgentResponse(BaseModel):
     health_check_url: str | None = None
     created_at: datetime | str
     updated_at: datetime | str
-
-    class Config:
-        from_attributes = True
 
 
 class HealthCheckResponse(BaseModel):

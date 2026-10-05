@@ -170,27 +170,27 @@ class EvidencePackage(BaseModel):
     cell_id: str | None = None
     trace_id: str
     span_id: str
-    
+
     # Input/Output
     test_input: str
     expected_behavior: str
     actual_response: str
-    
+
     # Evidence
     assertion_evidence: list[EvidenceItem] = []
     judge_evidence: list[EvidenceItem] = []
     redteam_evidence: list[EvidenceItem] = []
-    
+
     # Results
     assertion_result: dict[str, Any] | None = None
     judge_result: dict[str, Any] | None = None
     redteam_result: dict[str, Any] | None = None
-    
+
     # Final verdict
     final_verdict: str
     final_confidence: float
     final_severity: str | None = None
-    
+
     # Metadata
     execution_time_ms: int
     tokens_used: int
@@ -199,14 +199,14 @@ class EvidencePackage(BaseModel):
     provider_info: dict[str, str] = {}
     prompt_version: str | None = None
     dataset_version: str | None = None
-    
+
     # Timestamps
     started_at: datetime
     completed_at: datetime
-    
+
     # Integrity
     package_hash: str | None = None  # SHA256 of the entire package for integrity
-    
+
     # Reproducibility
     config_snapshot: dict[str, Any] = {}
     reproducibility_verified: bool = False

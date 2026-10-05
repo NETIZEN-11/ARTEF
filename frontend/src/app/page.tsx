@@ -47,41 +47,41 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-white text-gray-900 font-sans antialiased selection:bg-pink-400 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white text-gray-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-br from-pink-300/40 via-rose-200/30 to-transparent blur-[120px] rounded-full" />
-        <div className="absolute top-1/2 -left-60 w-[500px] h-[400px] bg-pink-200/30 blur-[100px] rounded-full" />
-        <div className="absolute bottom-0 -right-40 w-[600px] h-[500px] bg-rose-200/20 blur-[120px] rounded-full" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f9a8d420_1px,transparent_1px),linear-gradient(to_bottom,#f9a8d420_1px,transparent_1px)] bg-[size:3rem_3rem]" />
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-br from-blue-300/30 via-indigo-200/20 to-transparent blur-[120px] rounded-full" />
+        <div className="absolute top-1/2 -left-60 w-[500px] h-[400px] bg-blue-200/20 blur-[100px] rounded-full" />
+        <div className="absolute bottom-0 -right-40 w-[600px] h-[500px] bg-indigo-200/20 blur-[120px] rounded-full" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f620_1px,transparent_1px),linear-gradient(to_bottom,#3b82f620_1px,transparent_1px)] bg-[size:3rem_3rem]" />
       </div>
 
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-pink-100 shadow-sm shadow-pink-100/50">
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-pink-400 p-[1.5px] shadow-lg shadow-pink-300/40 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-indigo-500 p-[1.5px] shadow-lg shadow-blue-300/40 group-hover:scale-105 transition-transform">
               <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                <Shield className="w-5 h-5 text-pink-600" />
+                <Shield className="w-5 h-5 text-blue-600" />
               </div>
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-rose-600 to-pink-500 bg-clip-text text-transparent">
+                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   ARTEF
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border border-pink-200">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                   OJT 2026
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400 hidden sm:block leading-none">Agent Red-Teaming &amp; Assurance</p>
+              <p className="text-[11px] text-gray-500 hidden sm:block leading-none">Agent Red-Teaming &amp; Assurance</p>
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-7 text-sm font-medium text-gray-500">
+          <nav className="hidden md:flex items-center space-x-7 text-sm font-medium text-gray-600">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="hover:text-rose-600 transition-colors"
+                className="hover:text-blue-600 transition-colors"
               >
                 {link.label}
               </a>
@@ -90,7 +90,7 @@ export default function LandingPage() {
 
           <button
             onClick={handleLaunch}
-            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-lg shadow-pink-300/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-300/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
             <span>{isAuthenticated ? "Dashboard" : "Enter Console"}</span>
             <ArrowRight className="w-4 h-4" />
@@ -102,15 +102,15 @@ export default function LandingPage() {
         <section className="pt-16 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 space-y-7">
-              <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-100 to-rose-100 border border-pink-200 text-pink-700 text-xs font-semibold shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+              <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-200 text-blue-800 text-xs font-semibold shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
                 <span>Autonomous Agent Red-Teaming Platform</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-gray-900">
                 Secure AI Agents{" "}
-                <span className="bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent">
                   Before Adversaries Exploit Them.
                 </span>
               </h1>
@@ -122,7 +122,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row gap-4 pt-1">
                 <button
                   onClick={handleLaunch}
-                  className="px-8 py-3.5 rounded-xl font-semibold text-base bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-xl shadow-pink-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 group"
+                  className="px-8 py-3.5 rounded-xl font-semibold text-base bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 text-white shadow-xl shadow-blue-300/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center space-x-2 group"
                 >
                   <Play className="w-4 h-4 fill-white" />
                   <span>Launch ARTEF Console</span>
@@ -130,16 +130,16 @@ export default function LandingPage() {
                 </button>
                 <a
                   href="#simulator"
-                  className="px-6 py-3.5 rounded-xl font-medium text-base bg-white hover:bg-pink-50 border border-pink-200 hover:border-pink-300 text-gray-700 hover:text-rose-600 shadow-sm transition-all flex items-center justify-center space-x-2"
+                  className="px-6 py-3.5 rounded-xl font-medium text-base bg-white hover:bg-blue-50 border border-blue-200 hover:border-blue-300 text-gray-700 hover:text-indigo-600 shadow-sm transition-all flex items-center justify-center space-x-2"
                 >
-                  <Terminal className="w-4 h-4 text-pink-500" />
+                  <Terminal className="w-4 h-4 text-blue-500" />
                   <span>Try Live Simulator</span>
                 </a>
               </div>
 
-              <div className="pt-4 border-t border-pink-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="pt-4 border-t border-blue-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {HERO_STATS.map((s) => (
-                  <div key={s.label} className="p-4 rounded-2xl bg-white border border-pink-100 shadow-sm hover:shadow-md hover:border-pink-200 transition-all">
+                  <div key={s.label} className="p-4 rounded-2xl bg-white border border-blue-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all">
                     <div className={`text-2xl font-extrabold ${s.color}`}>{s.val}</div>
                     <div className="text-xs text-gray-400 font-medium mt-0.5">{s.label}</div>
                   </div>
@@ -148,12 +148,12 @@ export default function LandingPage() {
             </div>
 
             <div className="lg:col-span-5 relative flex justify-center">
-              <div className="absolute -inset-6 bg-gradient-to-r from-pink-400/30 via-rose-400/20 to-fuchsia-300/20 rounded-3xl blur-3xl opacity-60 animate-pulse" />
+              <div className="absolute -inset-6 bg-gradient-to-r from-blue-400/30 via-indigo-400/20 to-blue-300/20 rounded-3xl blur-3xl opacity-60 animate-pulse" />
 
-              <div className="relative w-full max-w-md rounded-3xl bg-white border border-pink-200 shadow-2xl shadow-pink-200/60 p-5 hover:border-rose-300 transition-all group">
-                <div className="flex items-center justify-between pb-3 mb-3 border-b border-pink-100 text-xs font-semibold">
-                  <span className="flex items-center space-x-1.5 text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+              <div className="relative w-full max-w-md rounded-3xl bg-white border border-blue-200 shadow-2xl shadow-blue-200/60 p-5 hover:border-indigo-300 transition-all group">
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-100 text-xs font-semibold">
+                  <span className="flex items-center space-x-1.5 text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
                     <span>Red-Team Vectors</span>
                   </span>
                   <span className="flex items-center space-x-1.5 text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
@@ -162,15 +162,20 @@ export default function LandingPage() {
                   </span>
                 </div>
 
-                <div className="rounded-2xl overflow-hidden border border-pink-100 bg-gray-50 flex items-center justify-center p-2">
+                <div className="rounded-2xl overflow-hidden border-2 border-blue-200 bg-white flex items-center justify-center p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/artef-diagram.png"
                     alt="ARTEF Architecture Diagram"
-                    className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="w-full h-auto max-h-[300px] object-contain transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%23f472b6"/><text x="50%" y="50%" text-anchor="middle" fill="white" font-size="20" font-family="Arial">ARTEF Diagram</text></svg>';
+                    }}
                   />
                 </div>
 
-                <div className="mt-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-100 flex items-center justify-between text-xs">
+                <div className="mt-3 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span className="font-semibold text-gray-700">ARTEF Engine:</span>
@@ -191,7 +196,7 @@ export default function LandingPage() {
             {FRAMEWORK_BADGES.map((tech) => (
               <span
                 key={tech}
-                className="px-4 py-2 rounded-xl bg-white border border-pink-100 shadow-sm text-sm font-semibold text-gray-500 hover:text-rose-600 hover:border-pink-300 transition-all"
+                className="px-4 py-2 rounded-xl bg-white border border-blue-100 shadow-sm text-sm font-semibold text-gray-500 hover:text-indigo-600 hover:border-blue-300 transition-all"
               >
                 {tech}
               </span>
@@ -201,7 +206,7 @@ export default function LandingPage() {
 
         <section id="simulator" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-pink-600 bg-pink-50 px-4 py-1.5 rounded-full border border-pink-200 mb-4">
+            <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-200 mb-4">
               <Terminal className="w-3.5 h-3.5" />
               <span>Interactive Threat Simulation</span>
             </div>
@@ -213,19 +218,19 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-pink-200 bg-white shadow-2xl shadow-pink-100/60 overflow-hidden">
-            <div className="flex border-b border-pink-100 bg-pink-50/60 overflow-x-auto scrollbar-hide">
+          <div className="rounded-3xl border border-blue-200 bg-white shadow-2xl shadow-blue-100/60 overflow-hidden">
+            <div className="flex border-b border-blue-100 bg-blue-50/60 overflow-x-auto scrollbar-hide">
               {ATTACK_SCENARIOS.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setSelectedScenario(s)}
                   className={`px-5 py-3.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors flex items-center space-x-2 border-b-2 ${
                     selectedScenario.id === s.id
-                      ? "border-rose-500 text-rose-700 bg-white"
-                      : "border-transparent text-gray-400 hover:text-rose-500 hover:bg-white/50"
+                      ? "border-indigo-500 text-indigo-700 bg-white"
+                      : "border-transparent text-gray-400 hover:text-indigo-500 hover:bg-white/50"
                   }`}
                 >
-                  <ShieldAlert className="w-4 h-4 text-rose-400" />
+                  <ShieldAlert className="w-4 h-4 text-indigo-400" />
                   <span>{s.title}</span>
                 </button>
               ))}
@@ -243,20 +248,20 @@ export default function LandingPage() {
                   <Activity className="w-3.5 h-3.5 animate-pulse" />
                   <span>{selectedScenario.latency}</span>
                 </span>
-                <span className="px-2.5 py-0.5 rounded bg-pink-900/40 text-pink-300 border border-pink-700/40 font-semibold">
+                <span className="px-2.5 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/40 font-semibold">
                   {selectedScenario.badge}
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-pink-100">
+            <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-blue-100">
               <div className="p-6 sm:p-8 space-y-4 bg-white">
-                <div className="flex items-center space-x-2 text-rose-600 text-xs font-bold uppercase tracking-wider">
+                <div className="flex items-center space-x-2 text-indigo-600 text-xs font-bold uppercase tracking-wider">
                   <Flame className="w-4 h-4" />
                   <span>Injected Adversarial Payload</span>
                 </div>
-                <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 font-mono text-sm text-rose-700 leading-relaxed shadow-inner">
-                  <p className="text-xs text-rose-400 mb-2 font-bold">Input Payload</p>
+                <div className="rounded-xl bg-indigo-50 border border-indigo-200 p-4 font-mono text-sm text-indigo-700 leading-relaxed shadow-inner">
+                  <p className="text-xs text-indigo-400 mb-2 font-bold">Input Payload</p>
                   &quot;{selectedScenario.attackPrompt}&quot;
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -280,11 +285,11 @@ export default function LandingPage() {
                   &quot;{selectedScenario.defenseResponse}&quot;
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-xl bg-white border border-pink-100 shadow-sm">
+                  <div className="p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
                     <div className="text-[11px] text-gray-400 uppercase font-semibold">Confidence</div>
                     <div className="text-lg font-bold text-gray-900 mt-0.5">99.8%</div>
                   </div>
-                  <div className="p-3 rounded-xl bg-white border border-pink-100 shadow-sm">
+                  <div className="p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
                     <div className="text-[11px] text-gray-400 uppercase font-semibold">Action</div>
                     <div className="text-lg font-bold text-emerald-600 mt-0.5">Drop &amp; Log</div>
                   </div>
@@ -296,7 +301,7 @@ export default function LandingPage() {
 
         <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-14">
-            <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-4 py-1.5 rounded-full border border-rose-200 mb-4">
+            <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full border border-indigo-200 mb-4">
               <Layers className="w-3.5 h-3.5" />
               <span>Full-Stack AI Assurance</span>
             </div>
@@ -309,8 +314,8 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 rounded-3xl p-8 bg-white border border-pink-100 shadow-lg hover:shadow-xl hover:border-rose-300 transition-all group">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 mb-6 group-hover:scale-110 transition-transform">
+            <div className="md:col-span-2 rounded-3xl p-8 bg-white border border-blue-100 shadow-lg hover:shadow-xl hover:border-indigo-300 transition-all group">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition-transform">
                 <Zap className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Autonomous Multi-Turn Red-Teaming</h3>
@@ -319,22 +324,22 @@ export default function LandingPage() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {["Token Smuggling", "Crescendo Attacks", "Autonomous Fuzzing"].map((t) => (
-                  <span key={t} className="text-xs px-3 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-medium">{t}</span>
+                  <span key={t} className="text-xs px-3 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-medium">{t}</span>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl p-8 bg-gradient-to-br from-pink-500 to-rose-600 border-0 shadow-lg text-white group hover:scale-[1.01] transition-all">
+            <div className="rounded-3xl p-8 bg-gradient-to-br from-blue-500 to-indigo-600 border-0 shadow-lg text-white group hover:scale-[1.01] transition-all">
               <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                 <Cpu className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-bold mb-3">Multi-Judge Consensus</h3>
-              <p className="text-pink-100 text-sm leading-relaxed">
+              <p className="text-blue-100 text-sm leading-relaxed">
                 Eliminates single-model judge hallucination by combining ensemble LLM evaluators with deterministic regex, refusal classifiers, and vector semantic similarity.
               </p>
             </div>
 
-            <div className="rounded-3xl p-8 bg-white border border-pink-100 shadow-lg hover:shadow-xl hover:border-pink-300 transition-all group">
+            <div className="rounded-3xl p-8 bg-white border border-blue-100 shadow-lg hover:shadow-xl hover:border-blue-300 transition-all group">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
                 <GitBranch className="w-6 h-6" />
               </div>
@@ -344,8 +349,8 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="md:col-span-2 rounded-3xl p-8 bg-white border border-pink-100 shadow-lg hover:shadow-xl hover:border-pink-300 transition-all group">
-              <div className="w-12 h-12 rounded-2xl bg-pink-50 border border-pink-200 flex items-center justify-center text-pink-600 mb-6 group-hover:scale-110 transition-transform">
+            <div className="md:col-span-2 rounded-3xl p-8 bg-white border border-blue-100 shadow-lg hover:shadow-xl hover:border-blue-300 transition-all group">
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
                 <Users className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Human Review &amp; Triage Queue</h3>
@@ -354,12 +359,12 @@ export default function LandingPage() {
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {["Trajectory Inspector", "RBAC Permissions", "Audit Logging"].map((t) => (
-                  <span key={t} className="text-xs px-3 py-1 rounded-lg bg-pink-50 border border-pink-200 text-pink-700 font-medium">{t}</span>
+                  <span key={t} className="text-xs px-3 py-1 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-medium">{t}</span>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl p-8 bg-white border border-pink-100 shadow-lg hover:shadow-xl hover:border-pink-300 transition-all group">
+            <div className="rounded-3xl p-8 bg-white border border-blue-100 shadow-lg hover:shadow-xl hover:border-blue-300 transition-all group">
               <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
                 <BarChart3 className="w-6 h-6" />
               </div>
@@ -369,7 +374,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="rounded-3xl p-8 bg-white border border-pink-100 shadow-lg hover:shadow-xl hover:border-pink-300 transition-all group">
+            <div className="rounded-3xl p-8 bg-white border border-blue-100 shadow-lg hover:shadow-xl hover:border-blue-300 transition-all group">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 mb-6 group-hover:scale-110 transition-transform">
                 <Database className="w-6 h-6" />
               </div>
@@ -395,12 +400,12 @@ export default function LandingPage() {
             {WORKFLOW_STEPS.map((step) => (
               <div
                 key={step.num}
-                className="p-7 rounded-3xl bg-white border border-pink-100 shadow-sm hover:shadow-lg hover:border-pink-200 transition-all relative overflow-hidden group"
+                className="p-7 rounded-3xl bg-white border border-blue-100 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all relative overflow-hidden group"
               >
                 <div className={`absolute top-4 right-4 text-5xl font-black opacity-5 group-hover:opacity-10 transition-opacity text-${step.color}-500`}>
                   {step.num}
                 </div>
-                <div className={`text-3xl font-black bg-gradient-to-r from-${step.color}-500 to-pink-500 bg-clip-text text-transparent mb-4`}>
+                <div className={`text-3xl font-black bg-gradient-to-r from-${step.color}-500 to-blue-500 bg-clip-text text-transparent mb-4`}>
                   {step.num}
                 </div>
                 <h4 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h4>
@@ -418,19 +423,19 @@ export default function LandingPage() {
             <p className="mt-3 text-gray-500">Comparing evaluation tools against ARTEF&apos;s autonomous red-teaming engine.</p>
           </div>
 
-          <div className="rounded-3xl border border-pink-100 bg-white shadow-xl overflow-hidden">
+          <div className="rounded-3xl border border-blue-100 bg-white shadow-xl overflow-hidden">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gradient-to-r from-pink-50 to-rose-50 text-xs uppercase font-bold text-gray-500 border-b border-pink-100">
+              <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 text-xs uppercase font-bold text-gray-500 border-b border-blue-100">
                 <tr>
                   <th className="py-4 px-6">Evaluation Feature</th>
-                  <th className="py-4 px-6 text-rose-600">ARTEF Platform</th>
+                  <th className="py-4 px-6 text-indigo-600">ARTEF Platform</th>
                   <th className="py-4 px-6 text-gray-400">Static Scanners</th>
                   <th className="py-4 px-6 text-gray-400">Manual Pentesting</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-pink-50">
+              <tbody className="divide-y divide-blue-50">
                 {BENCHMARK_COMPARISONS.map((row) => (
-                  <tr key={row.feat} className="hover:bg-pink-50/40 transition-colors">
+                  <tr key={row.feat} className="hover:bg-blue-50/40 transition-colors">
                     <td className="py-4 px-6 font-semibold text-gray-800">{row.feat}</td>
                     <td className="py-4 px-6 text-emerald-700 font-semibold">{row.artef}</td>
                     <td className="py-4 px-6 text-gray-400">{row.s}</td>
@@ -443,23 +448,23 @@ export default function LandingPage() {
         </section>
 
         <section className="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="rounded-3xl p-8 sm:p-12 bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 shadow-2xl shadow-pink-300/40 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="rounded-3xl p-8 sm:p-12 bg-gradient-to-r from-indigo-500 via-blue-500 to-blue-500 shadow-2xl shadow-blue-300/40 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-pink-100 bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
+              <div className="inline-flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-blue-100 bg-white/10 px-3 py-1.5 rounded-full border border-white/20">
                 <Code2 className="w-3.5 h-3.5" />
                 <span>On-the-Job Training Deliverable - 2026</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
                 Designed &amp; Built by Nitesh Singh
               </h3>
-              <p className="text-pink-100 text-sm sm:text-base leading-relaxed">
+              <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
                 ARTEF was conceived and implemented as a production-grade AI security system combining FastAPI, Next.js 14, Celery workers, ChromaDB vector indexing, RBAC authentication, and real-time adversarial evaluation matrices.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleLaunch}
-                className="px-6 py-3 rounded-xl font-semibold text-sm bg-white text-rose-600 hover:bg-pink-50 shadow-lg transition-all flex items-center space-x-2"
+                className="px-6 py-3 rounded-xl font-semibold text-sm bg-white text-indigo-600 hover:bg-blue-50 shadow-lg transition-all flex items-center space-x-2"
               >
                 <span>Launch Console</span>
                 <ArrowRight className="w-4 h-4" />
@@ -486,17 +491,17 @@ export default function LandingPage() {
             {FAQS.map((faq, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-pink-100 bg-white shadow-sm overflow-hidden hover:border-pink-200 transition-colors"
+                className="rounded-2xl border border-blue-100 bg-white shadow-sm overflow-hidden hover:border-blue-200 transition-colors"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full py-4 px-6 text-left flex items-center justify-between text-base font-semibold text-gray-800 hover:text-rose-600 transition-colors"
+                  className="w-full py-4 px-6 text-left flex items-center justify-between text-base font-semibold text-gray-800 hover:text-indigo-600 transition-colors"
                 >
                   <span>{faq.question}</span>
-                  <ChevronDown className={`w-5 h-5 text-pink-400 transition-transform duration-200 ${openFaq === idx ? "rotate-180 text-rose-500" : ""}`} />
+                  <ChevronDown className={`w-5 h-5 text-blue-400 transition-transform duration-200 ${openFaq === idx ? "rotate-180 text-indigo-500" : ""}`} />
                 </button>
                 {openFaq === idx && (
-                  <div className="px-6 pb-5 text-sm text-gray-500 leading-relaxed border-t border-pink-100 pt-3">
+                  <div className="px-6 pb-5 text-sm text-gray-500 leading-relaxed border-t border-blue-100 pt-3">
                     {faq.answer}
                   </div>
                 )}
@@ -506,12 +511,12 @@ export default function LandingPage() {
         </section>
 
         <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
-          <div className="rounded-3xl p-10 sm:p-16 bg-gradient-to-b from-pink-50 to-rose-50 border border-pink-200 shadow-xl relative overflow-hidden">
-            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-64 bg-pink-300/30 blur-3xl rounded-full pointer-events-none" />
+          <div className="rounded-3xl p-10 sm:p-16 bg-gradient-to-b from-blue-50 to-indigo-50 border border-blue-200 shadow-xl relative overflow-hidden">
+            <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-64 bg-blue-300/30 blur-3xl rounded-full pointer-events-none" />
             <div className="relative">
               <h2 className="text-3xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
                 Ready to{" "}
-                <span className="bg-gradient-to-r from-rose-500 to-pink-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-indigo-500 to-blue-600 bg-clip-text text-transparent">
                   Stress-Test
                 </span>{" "}
                 Your AI Agents?
@@ -521,7 +526,7 @@ export default function LandingPage() {
               </p>
               <button
                 onClick={handleLaunch}
-                className="mt-8 px-10 py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 text-white shadow-2xl shadow-pink-300/50 hover:scale-105 active:scale-95 transition-all flex items-center space-x-2 mx-auto"
+                className="mt-8 px-10 py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-400 hover:to-blue-400 text-white shadow-2xl shadow-blue-300/50 hover:scale-105 active:scale-95 transition-all flex items-center space-x-2 mx-auto"
               >
                 <span>Launch ARTEF Platform</span>
                 <ArrowRight className="w-5 h-5" />
@@ -531,10 +536,10 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-pink-100 bg-white py-10 px-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-blue-100 bg-white py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-blue-500 flex items-center justify-center">
               <Shield className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -548,9 +553,9 @@ export default function LandingPage() {
           </p>
 
           <div className="flex items-center space-x-6 text-xs text-gray-400">
-            <a href="https://github.com/NETIZEN-11/ARTEF" target="_blank" rel="noreferrer" className="hover:text-rose-600 transition-colors font-medium">GitHub</a>
-            <Link href="/dashboard" className="hover:text-rose-600 transition-colors font-medium">Dashboard</Link>
-            <Link href="/login" className="hover:text-rose-600 transition-colors font-medium">Sign In</Link>
+            <a href="https://github.com/NETIZEN-11/ARTEF" target="_blank" rel="noreferrer" className="hover:text-indigo-600 transition-colors font-medium">GitHub</a>
+            <Link href="/dashboard" className="hover:text-indigo-600 transition-colors font-medium">Dashboard</Link>
+            <Link href="/login" className="hover:text-indigo-600 transition-colors font-medium">Sign In</Link>
           </div>
         </div>
       </footer>

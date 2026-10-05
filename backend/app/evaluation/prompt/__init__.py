@@ -1,11 +1,9 @@
-from .prompt_evaluator import PromptEvaluator, PromptEvaluationResult, PromptMetrics
 from .prompt_comparison import PromptComparator, PromptComparisonResult
+from .prompt_evaluator import PromptEvaluationResult, PromptEvaluator, PromptMetrics
 
 __all__ = [
-    "PromptEvaluator",
-    "PromptEvaluator",
-    "PromptComparisonResult",
-    "PromptMetrics",
-    "PromptEvaluator",
     "PromptComparator",
+    "PromptComparisonResult",
+    "PromptEvaluator",
+    "PromptMetrics",
 ]
