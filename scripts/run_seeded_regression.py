@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Run seeded regression benchmark to validate the framework."""
 
 import app.core.sqlite_compat  # noqa: F401
@@ -41,7 +41,6 @@ from app.services.scoring_service import MockScoringService
 async def run_seeded_regression() -> Dict[str, Any]:
     """Run the complete seeded regression benchmark."""
     async with async_session_maker() as session:
-        # Get repositories
         agent_repo = TargetAgentRepository(session)
         suite_repo = TestSuiteRepository(session)
         case_repo = TestCaseRepository(session)
@@ -52,7 +51,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         baseline_item_repo = BaselineItemRepository(session)
         regression_repo = RegressionRepository(session)
 
-        # Get or create test agents
         safe_agent = (
             await agent_repo.get_by_name("Mock Target Agent v1 (Safe)")
             or await agent_repo.get_by_name("Safe Agent (Mock)")
@@ -66,13 +64,11 @@ async def run_seeded_regression() -> Dict[str, Any]:
             print("[FAIL] Required mock agents not found.")
             return {"success": False, "error": "Mock agents not found"}
 
-        # Get test suites
         suites = await suite_repo.list(filters={"is_active": True})
         if not suites:
             print("[FAIL] No test suites found.")
             return {"success": False, "error": "Test suites not found"}
 
-        # Target suite: prioritize jailbreak tests suite
         target_suite = None
         for s in suites:
             if "jailbreak" in s.name.lower():
@@ -90,7 +86,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         print(f"[INFO] Selected Test Suite: '{target_suite.name}' (v{target_suite.version})")
         print("[PHASE 1] Establishing baseline with safe agent...")
 
-        # Create baseline run with safe agent
         baseline_run = Run(
             target_agent_id=safe_agent.id,
             suite_id=target_suite.id,
@@ -103,7 +98,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         )
         baseline_run = await run_repo.create(baseline_run)
 
-        # Execute baseline run
         safe_provider = MockTargetAgentProvider(scenario="safe")
 
         async def mock_execute_run(run_id: uuid.UUID):
@@ -136,11 +130,9 @@ async def run_seeded_regression() -> Dict[str, Any]:
 
         await mock_execute_run(baseline_run.id)
 
-        # Score baseline run
         scoring_service = MockScoringService(execution_repo, result_repo, case_repo)
         await scoring_service.score_run(baseline_run.id)
 
-        # Create baseline
         baseline = Baseline(
             suite_id=target_suite.id,
             suite_version=target_suite.version,
@@ -156,7 +148,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         )
         baseline = await baseline_repo.create(baseline)
 
-        # Create baseline items
         baseline_results = await result_repo.list_by_run(baseline_run.id)
         for result in baseline_results:
             item = BaselineItem(
@@ -172,7 +163,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
 
         print("[PHASE 2] Running evaluation with vulnerable agent...")
 
-        # Create test run with vulnerable agent
         test_run = Run(
             target_agent_id=vulnerable_agent.id,
             suite_id=target_suite.id,
@@ -186,7 +176,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         )
         test_run = await run_repo.create(test_run)
 
-        # Execute test run with vulnerable provider
         vulnerable_provider = MockTargetAgentProvider(scenario="jailbreak_vulnerable")
 
         async def mock_execute_vulnerable(run_id: uuid.UUID):
@@ -219,12 +208,10 @@ async def run_seeded_regression() -> Dict[str, Any]:
 
         await mock_execute_vulnerable(test_run.id)
 
-        # Score test run
         await scoring_service.score_run(test_run.id)
 
         print("[PHASE 3] Detecting regressions...")
 
-        # Detect regressions
         detector = RegressionDetector(
             result_repo, baseline_repo, baseline_item_repo, regression_repo
         )
@@ -232,13 +219,11 @@ async def run_seeded_regression() -> Dict[str, Any]:
 
         print(f"[INFO] Found {len(findings)} potential regressions")
 
-        # Classify severity
         classifier = SeverityClassifier(case_repo)
         for finding in findings:
             classification = await classifier.classify(finding)
             finding.severity = classification.level
 
-        # Update database regression records with classified severity
         db_regressions = await regression_repo.list_by_run(test_run.id)
         for reg in db_regressions:
             for finding in findings:
@@ -248,7 +233,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
 
         print("[PHASE 4] Evaluating CI gate...")
 
-        # Evaluate gate
         gate_evaluator = GateEvaluator(run_repo, result_repo, regression_repo)
         gate_result = await gate_evaluator.evaluate(test_run.id)
 
@@ -256,7 +240,6 @@ async def run_seeded_regression() -> Dict[str, Any]:
         print(f"   Critical: {gate_result.critical_count}, High: {gate_result.high_count}")
         print(f"   Medium: {gate_result.medium_count}, Low: {gate_result.low_count}")
 
-        # Verify all seeded regressions detected
         seeded_categories = [TestCaseCategory.JAILBREAK, TestCaseCategory.SAFETY]
         suite_cases = await case_repo.list_by_suite(target_suite.id)
         expected_regressions = sum(1 for c in suite_cases if c.category in seeded_categories)

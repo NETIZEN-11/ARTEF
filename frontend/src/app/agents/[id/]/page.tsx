@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api";
 import { formatDate, formatDuration } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { useParams, useRouter } from "next/navigation";
 import { Edit, Trash2, ArrowLeft, Wifi, Play } from "lucide-react";
 
@@ -79,15 +79,11 @@ export default function AgentDetailPage() {
   }, [agentId]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchAgent();
-        fetchRuns();
-      }
-    }
-  }, [isAuthenticated, isLoading, fetchAgent, fetchRuns]);
+    const token = getAccessToken();
+    if (token) { fetchAgent(); fetchRuns(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) { fetchAgent(); fetchRuns(); }
+  }, [isAuthenticated, isLoading, fetchAgent, fetchRuns, router]);
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this agent?")) return;
@@ -99,7 +95,7 @@ export default function AgentDetailPage() {
     }
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Edit, Trash2, Download, Eye, Copy, AlertTriangle, Upload } from "lucide-react";
 
@@ -531,7 +531,7 @@ export default function SuiteDetailPage() {
     }
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return <LoadingScreen />;
   }
 

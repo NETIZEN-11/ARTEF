@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -74,7 +74,6 @@ class ScoringService:
 
             scoring_result = await self._score_execution(execution, test_case)
 
-            # Track cost for this scoring operation
             if scoring_result.tokens_used > 0:
                 await self.cost_tracker.track_cost(
                     category=CostCategory.LLM_INFERENCE,
@@ -115,7 +114,6 @@ class ScoringService:
             )
             await self.result_repo.create(result)
 
-            # FIXED: Use database-level atomic increment to prevent race conditions
             from sqlalchemy import update
 
             from app.models.run import Run as RunModel
@@ -133,7 +131,6 @@ class ScoringService:
                     update(RunModel).where(RunModel.id == run_id).values(inconclusive_count=RunModel.inconclusive_count + 1)
                 )
 
-            # Update cost and latency atomically
             await self.execution_repo.session.execute(
                 update(RunModel).where(RunModel.id == run_id).values(
                     total_cost_usd=RunModel.total_cost_usd + scoring_result.estimated_cost,

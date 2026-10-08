@@ -24,4 +24,7 @@ COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
+    CMD wget --spider -q http://localhost:3000 || exit 1
+
 CMD ["node", "server.js"]

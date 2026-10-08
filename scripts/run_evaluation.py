@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Run an evaluation from the command line."""
 
 import asyncio
@@ -36,36 +36,32 @@ async def run_evaluation(agent_name: str, suite_name: str, baseline_name: str = 
         result_repo = ResultRepository(session)
         baseline_repo = BaselineRepository(session)
 
-        # Find agent
         agent = await agent_repo.get_by_name(agent_name)
         if not agent:
-            print(f"❌ Agent '{agent_name}' not found")
+            print(f"âŒ Agent '{agent_name}' not found")
             return False
 
-        # Find suite
         suites = await suite_repo.list(filters={"name": suite_name, "is_active": True})
         if not suites:
-            print(f"❌ Suite '{suite_name}' not found")
+            print(f"âŒ Suite '{suite_name}' not found")
             return False
         suite = suites[0]
 
-        # Find baseline
         baseline = None
         if baseline_name:
             baselines = await baseline_repo.list(filters={"suite_id": suite.id, "is_active": True})
             baseline = next((b for b in baselines if b.name == baseline_name), None)
             if not baseline:
-                print(f"❌ Baseline '{baseline_name}' not found")
+                print(f"âŒ Baseline '{baseline_name}' not found")
                 return False
         else:
             baseline = await baseline_repo.get_active_for_suite(suite.id)
 
-        print(f"🔬 Starting evaluation:")
+        print(f"ðŸ”¬ Starting evaluation:")
         print(f"   Agent: {agent.name} ({agent.id})")
         print(f"   Suite: {suite.name} v{suite.version}")
         print(f"   Baseline: {baseline.name if baseline else 'None'}")
 
-        # Create run
         run = Run(
             target_agent_id=agent.id,
             suite_id=suite.id,
@@ -80,21 +76,19 @@ async def run_evaluation(agent_name: str, suite_name: str, baseline_name: str = 
         run = await run_repo.create(run)
         print(f"   Run ID: {run.id}")
 
-        # Execute
         execution_service = ExecutionService(
             run_repo, execution_repo, result_repo, agent_repo, suite_repo
         )
         
-        print("📋 Executing tests...")
+        print("ðŸ“‹ Executing tests...")
         await execution_service.execute_run(run.id)
         
-        print("📊 Scoring results...")
+        print("ðŸ“Š Scoring results...")
         scoring_service = ScoringService(execution_repo, result_repo, suite_repo)
         await scoring_service.score_run(run.id)
 
-        # Regression detection
         if baseline:
-            print("🔍 Detecting regressions...")
+            print("ðŸ” Detecting regressions...")
             from app.repositories.baselines import BaselineItemRepository
             baseline_item_repo = BaselineItemRepository(session)
             regression_repo = RegressionRepository(session)
@@ -104,17 +98,17 @@ async def run_evaluation(agent_name: str, suite_name: str, baseline_name: str = 
             )
             findings = await detector.detect_regressions(run.id, baseline.id)
 
-            print("⚖️  Classifying severity...")
+            print("âš–ï¸  Classifying severity...")
             classifier = SeverityClassifier(suite_repo)
             for finding in findings:
                 classification = await classifier.classify(finding)
                 finding.severity = classification.level
 
-            print("🚪 Evaluating gate...")
+            print("ðŸšª Evaluating gate...")
             gate_evaluator = GateEvaluator(run_repo, result_repo, regression_repo)
             gate_result = await gate_evaluator.evaluate(run.id)
 
-            print(f"\n📊 Results:")
+            print(f"\nðŸ“Š Results:")
             print(f"   Gate Decision: {gate_result.decision}")
             print(f"   Exit Code: {gate_result.exit_code}")
             print(f"   Critical: {gate_result.critical_count}")
@@ -124,13 +118,13 @@ async def run_evaluation(agent_name: str, suite_name: str, baseline_name: str = 
             print(f"   Inconclusive: {gate_result.inconclusive_count}")
 
             if gate_result.decision in ("BLOCK", "FAIL"):
-                print("\n❌ GATE FAILED - Deployment blocked")
+                print("\nâŒ GATE FAILED - Deployment blocked")
                 return False
             else:
-                print("\n✅ GATE PASSED")
+                print("\nâœ… GATE PASSED")
                 return True
         else:
-            print("\n✅ Evaluation complete (no baseline for regression detection)")
+            print("\nâœ… Evaluation complete (no baseline for regression detection)")
             return True
 
     await engine.dispose()

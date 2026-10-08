@@ -1,4 +1,4 @@
-"""
+﻿"""
 SQLite compatibility shim for PostgreSQL-specific SQLAlchemy types.
 Import this early (before any models) to replace JSONB, ARRAY, UUID.
 """
@@ -76,20 +76,16 @@ if IS_SQLITE:
     pg_mod.UUID = String
     sys.modules["sqlalchemy.dialects.postgresql"] = pg_mod
 
-    # Also patch the base SQLAlchemy JSON type used by regular JSON columns
     import sqlalchemy.sql.sqltypes as _sqltypes
     _orig_json_impl = _sqltypes.JSON.JSONIndexType
 
-    # Monkey-patch JSON serializer on the engine level via event
     from sqlalchemy import event
     from sqlalchemy.engine import Engine
 
     @event.listens_for(Engine, "connect")
     def set_sqlite_json_serializer(dbapi_connection, connection_record):
-        # aiosqlite wraps a real sqlite connection; configure if possible
         pass
 
-# Ensure bcrypt is patched for passlib compatibility early
 try:
     import bcrypt
     if not hasattr(bcrypt, "__about__"):

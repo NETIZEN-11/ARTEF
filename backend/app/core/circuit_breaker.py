@@ -1,4 +1,4 @@
-"""Circuit Breaker pattern implementation for external provider failures."""
+﻿"""Circuit Breaker pattern implementation for external provider failures."""
 
 import asyncio
 from collections.abc import Callable
@@ -110,7 +110,6 @@ class CircuitBreaker:
             self.stats.last_failure_time = datetime.utcnow()
 
             if self.state == CircuitState.HALF_OPEN:
-                # Any failure in half-open goes back to open
                 await self._transition_to_open()
             elif self.state == CircuitState.CLOSED:
                 if self.stats.consecutive_failures >= self.config.failure_threshold:
@@ -201,7 +200,6 @@ class CircuitBreakerRegistry:
             return False
 
 
-# Global registry instance
 circuit_breaker_registry = CircuitBreakerRegistry()
 
 

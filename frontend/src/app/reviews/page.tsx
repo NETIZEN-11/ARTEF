@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Eye, Edit, Filter, AlertTriangle, CheckCircle, XCircle, AlertCircle, Flag, FileText, Code, Copy, ChevronDown, ChevronUp, Search, RefreshCw } from "lucide-react";
 
 interface EvidenceItem {
@@ -57,6 +58,7 @@ interface ReviewItem {
 }
 
 export default function ReviewsPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +81,11 @@ export default function ReviewsPage() {
     setError(null);
     
     try {
-      setReviews([]);
-      // Backend doesn't have reviews endpoint yet, using empty for now
+      const params = new URLSearchParams();
+      if (filterStatus) params.append("status", filterStatus);
+      const res = await api.get(`/reviews${params.toString() ? `?${params.toString()}` : ""}`);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setReviews(list);
     } catch (error) {
       console.error("Failed to fetch reviews:", error);
       setError("Failed to load reviews. No data available.");
@@ -101,16 +106,12 @@ export default function ReviewsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchReviews();
-      }
-    }
-  }, [isAuthenticated, isLoading, fetchReviews]);
+    const token = getAccessToken();
+    if (token) { fetchReviews(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchReviews();
+  }, [isAuthenticated, isLoading, fetchReviews, router]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isAuthenticated || loading) return;
     
@@ -348,7 +349,7 @@ export default function ReviewsPage() {
     );
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

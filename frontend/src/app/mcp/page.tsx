@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,19 +9,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Network, Send, Shield, Zap, Copy, CheckCircle, Loader2, AlertTriangle } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/api";
 
 export default function MCPPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [messages, setMessages] = useState("Hello, how are you?");
+  const [model, setModel] = useState("gpt-4o");
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [guardrailEnabled, setGuardrailEnabled] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) window.location.href = "/login";
-  }, [isAuthenticated, isLoading]);
+    const token = getAccessToken();
+    if (!token && !isLoading && !isAuthenticated) router.replace("/login");
+  }, [isAuthenticated, isLoading, router]);
 
   const handleSend = async () => {
     setLoading(true);
@@ -28,7 +33,7 @@ export default function MCPPage() {
       const res = await api.post("/mcp/proxy", {
         messages: [{ role: "user", content: messages }],
         guardrail_check: guardrailEnabled,
-        model: "gpt-4o",
+        model,
       });
       setResponse({ success: true, data: res.data });
     } catch (e: any) {
@@ -36,18 +41,20 @@ export default function MCPPage() {
     } finally { setLoading(false); }
   };
 
-  if (isLoading || !isAuthenticated) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
+  if (isLoading && !getAccessToken()) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
+
+  const proxyUrl = `${getApiBaseUrl()}/mcp/proxy`;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2"><Network className="h-8 w-8 text-primary" />MCP Proxy</h1>
-          <p className="text-muted-foreground">Secure proxy for Model Context Protocol communications — promptfoo MCP</p>
+          <p className="text-muted-foreground">Secure proxy for Model Context Protocol communications &amp; tool call auditing</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Secure</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">TLS, auth, rate-limit, guardrails on every MCP call</p><Badge className="mt-2">TLS 1.3</Badge></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Secure</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">TLS, auth, rate-limit, guardrails on every MCP call</p><Badge className="mt-2">Protected</Badge></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Guarded</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">Jailbreak & injection blocked at proxy layer</p><Badge variant={guardrailEnabled ? "default" : "secondary"}>{guardrailEnabled ? "Enabled" : "Disabled"}</Badge></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Observable</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground">All calls logged to Prometheus/Grafana</p><Badge variant="outline">OTel</Badge></CardContent></Card>
         </div>
@@ -57,6 +64,7 @@ export default function MCPPage() {
             <CardHeader><CardTitle>Send MCP Request</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>Message</Label><Input value={messages} onChange={e => setMessages(e.target.value)} placeholder="User message" /></div>
+              <div className="space-y-2"><Label>Model</Label><Input value={model} onChange={e => setModel(e.target.value)} placeholder="Target model (e.g. gpt-4o, claude-3-5-sonnet)" /></div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={guardrailEnabled} onChange={e => setGuardrailEnabled(e.target.checked)} id="guardrail" />
                 <Label htmlFor="guardrail">Guardrail check (block jailbreak/injection)</Label>
@@ -86,7 +94,7 @@ export default function MCPPage() {
           <CardHeader><CardTitle>Integration</CardTitle></CardHeader>
           <CardContent>
             <pre className="bg-muted p-4 rounded text-sm overflow-auto">{`# Point your MCP client at the proxy
-export MCP_PROXY_URL=http://localhost:8000/api/v1/mcp/proxy
+export MCP_PROXY_URL=${proxyUrl}
 
 # All calls are automatically:
 #  - Authenticated (Bearer token)

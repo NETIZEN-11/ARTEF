@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +18,13 @@ import { Sun, Moon, Monitor, LogOut, User, Settings, Bell, Menu } from "lucide-r
 import { useTheme } from "next-themes";
 
 export const Header: React.FC = () => {
+  const [mounted, setMounted] = React.useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,7 +82,7 @@ export const Header: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {isAuthenticated && user && (
+          {mounted && isAuthenticated && user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -113,5 +119,3 @@ export const Header: React.FC = () => {
     </header>
   );
 }
-
-import Link from "next/link";

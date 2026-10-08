@@ -1,4 +1,4 @@
-from collections import defaultdict
+﻿from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -68,7 +68,6 @@ async def get_analytics(
 
     runs = await run_repo.list(skip=0, limit=500, filters={})
 
-    # Filter runs by cutoff
     filtered_runs = []
     for r in runs:
         r_created = r.created_at
@@ -77,11 +76,9 @@ async def get_analytics(
         if r_created >= cutoff:
             filtered_runs.append(r)
 
-    # If no runs in cutoff, fall back to all runs (development grace)
     if not filtered_runs and runs:
         filtered_runs = runs[:30]
 
-    # Daily buckets
     runs_by_day: dict[str, int] = defaultdict(int)
     passed_by_day: dict[str, int] = defaultdict(int)
     tests_by_day: dict[str, int] = defaultdict(int)
@@ -109,10 +106,8 @@ async def get_analytics(
         total_medium += r.medium_count or 0
         total_low += r.low_count or 0
 
-    # Ensure all days in range are present in the response
     sorted_days = sorted(runs_by_day.keys())
     if not sorted_days:
-        # Default placeholder dates for nice visualization
         for i in range(min(days, 7), -1, -1):
             d = (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d")
             sorted_days.append(d)

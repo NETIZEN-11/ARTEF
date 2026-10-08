@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
@@ -113,7 +113,6 @@ async def get_stats(
         require_role(["admin", "safety_engineer", "ml_engineer", "qa_engineer", "viewer"])
     ),
 ):
-    # Get limited runs to avoid OOM - stats over last 200 runs
     runs = await run_repo.list(skip=0, limit=200, filters={})
     pending_reviews = await review_repo.list_pending()
     review_queue_count = len(pending_reviews)
@@ -135,7 +134,6 @@ async def get_stats(
             cost_trend=[]
         )
 
-    # Calculate aggregated stats
     total_runs = len(runs)
     total_tests = sum(r.total_tests for r in runs if r.total_tests)
     total_passed = sum(r.passed_count for r in runs if r.passed_count)
@@ -152,7 +150,6 @@ async def get_stats(
 
     total_cost = sum(r.total_cost_usd for r in runs if r.total_cost_usd)
 
-    # Calculate trends (last 7 completed runs)
     completed_runs = [r for r in runs if r.status == RunStatus.COMPLETED][-7:]
 
     pass_rate_trend = []
@@ -278,7 +275,6 @@ async def list_executions(
         require_role(["admin", "safety_engineer", "ml_engineer", "qa_engineer", "viewer"])
     ),
 ):
-    # PAGINATION: Added to prevent OOM on large runs
     executions = await execution_repo.list_by_run(run_id, skip=skip, limit=limit)
     return [
         {
@@ -301,7 +297,6 @@ async def list_results(
         require_role(["admin", "safety_engineer", "ml_engineer", "qa_engineer", "viewer"])
     ),
 ):
-    # PAGINATION: Added to prevent OOM on large runs
     results = await result_repo.list_by_run(run_id, skip=skip, limit=limit)
     return [
         {

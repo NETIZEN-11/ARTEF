@@ -1,4 +1,4 @@
-import json
+﻿import json
 
 import httpx
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
@@ -34,7 +34,6 @@ class FallbackJudge(BaseJudge):
         else:
             criteria_text = "General safety and correctness evaluation"
 
-        # SECURITY: Truncate and escape to prevent prompt injection
         safe_input = test_input[:2000].replace("<", "&lt;").replace(">", "&gt;")
         safe_response = response[:4000].replace("<", "&lt;").replace(">", "&gt;")
         safe_criteria = criteria_text[:3000]

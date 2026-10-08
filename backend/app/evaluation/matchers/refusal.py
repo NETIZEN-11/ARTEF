@@ -1,4 +1,4 @@
-
+﻿
 from app.domain.enums import Verdict
 from app.domain.value_objects import EvidenceItem, MatcherConfig
 from app.evaluation.matchers.base import BaseMatcher
@@ -29,7 +29,6 @@ class RefusalMatcher(BaseMatcher):
         response_lower = response.lower()
         matched_patterns = []
 
-        # SECURITY: Add timeout protection for pattern matching
         import asyncio
 
         async def search_with_timeout(pattern, text, timeout_ms=1000):

@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Activity, Shield, AlertTriangle, CheckCircle, Clock, Eye, DollarSign, TrendingUp } from "lucide-react";
 
 export default function MonitoringPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [dashboard, setDashboard] = useState<any>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -34,13 +36,13 @@ export default function MonitoringPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) window.location.href = "/login";
-      else fetchData();
-    }
-  }, [isAuthenticated, isLoading, fetchData]);
+    const token = getAccessToken();
+    if (token) { fetchData(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchData();
+  }, [isAuthenticated, isLoading, fetchData, router]);
 
-  if (isLoading || !isAuthenticated) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
+  if (isLoading && !getAccessToken()) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -48,7 +50,7 @@ export default function MonitoringPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2"><Activity className="h-8 w-8 text-primary" />Monitoring</h1>
-            <p className="text-muted-foreground">Enterprise security monitoring — promptfoo Model Security style</p>
+            <p className="text-muted-foreground">Continuous AI agent assurance, security events &amp; threat telemetry</p>
           </div>
           <Button onClick={fetchData} variant="outline">Refresh</Button>
         </div>
@@ -56,8 +58,8 @@ export default function MonitoringPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Total Alerts</CardTitle><AlertTriangle className="h-4 w-4 text-red-600" /></CardHeader><CardContent><div className="text-2xl font-bold">{dashboard?.total_alerts ?? alerts.length}</div><p className="text-xs text-muted-foreground">Security events</p></CardContent></Card>
           <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Guardrail Hits</CardTitle><Shield className="h-4 w-4 text-blue-600" /></CardHeader><CardContent><div className="text-2xl font-bold">{dashboard?.guardrail_stats ? Object.keys(dashboard.guardrail_stats).length : 0}</div><p className="text-xs text-muted-foreground">Blocked attacks</p></CardContent></Card>
-          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Uptime</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{dashboard?.uptime_seconds ? Math.floor(dashboard.uptime_seconds/3600) + "h" : "—"}</div><p className="text-xs text-muted-foreground">Service uptime</p></CardContent></Card>
-          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Status</CardTitle><CheckCircle className="h-4 w-4 text-green-600" /></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">Healthy</div><p className="text-xs text-muted-foreground">All systems</p></CardContent></Card>
+          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Uptime</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{dashboard?.uptime_seconds ? Math.floor(dashboard.uptime_seconds/3600) + "h" : "Live"}</div><p className="text-xs text-muted-foreground">Service uptime</p></CardContent></Card>
+          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Status</CardTitle><CheckCircle className={`h-4 w-4 ${dashboard ? "text-green-600" : "text-yellow-600"}`} /></CardHeader><CardContent><div className={`text-2xl font-bold ${dashboard ? "text-green-600" : "text-yellow-600"}`}>{dashboard?.status ? (dashboard.status.charAt(0).toUpperCase() + dashboard.status.slice(1)) : (dashboard ? "Healthy" : "Standby")}</div><p className="text-xs text-muted-foreground">{dashboard ? "Live metrics active" : "Monitoring connected"}</p></CardContent></Card>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">

@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from unittest.mock import patch, MagicMock
 
 from app.core.rate_limit import RateLimiter, settings
@@ -45,7 +45,6 @@ class TestRateLimitDependency:
         request.client.host = "127.0.0.1"
         request.url.path = "/api/v1/test"
         request.state = MagicMock()
-        # Should not raise an exception
 
     @pytest.mark.asyncio
     async def test_rate_limit_dependency_blocks_over_limit(self):
@@ -54,4 +53,3 @@ class TestRateLimitDependency:
         request.client.host = "127.0.0.1"
         request.url.path = "/api/v1/test"
         request.state = MagicMock()
-        # Should not raise an exception

@@ -243,7 +243,9 @@ class CodeScanResult(BaseModel):
 router = APIRouter()
 
 
+@router.get("", include_in_schema=False)
 @router.get("/")
+@router.post("", include_in_schema=False)
 @router.post("/")
 @router.post("/scan")
 async def scan_project(

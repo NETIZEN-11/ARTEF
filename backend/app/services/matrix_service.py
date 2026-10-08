@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from uuid import UUID
 
 from app.core.config import get_settings
@@ -79,18 +79,15 @@ class MatrixService:
         if not suite:
             raise NotFoundError("TestSuite", str(suite_id))
 
-        # Validate all test cases belong to suite
         for tc_id in test_case_ids:
             tc = await self.case_repo.get(tc_id)
             if not tc or tc.suite_id != suite_id:
                 raise ValidationError(f"Test case {tc_id} not found in suite {suite_id}")
 
-        # Validate configurations
         if not configurations:
             raise ValidationError("At least one configuration is required")
 
         for config in configurations:
-            # Verify model config exists if specified
             if config.model_id:
                 from app.repositories.settings import ModelConfigRepository
                 model_repo = ModelConfigRepository(self.matrix_repo.session)
@@ -98,7 +95,6 @@ class MatrixService:
                 if not model:
                     raise ValidationError(f"Model config {config.model_id} not found")
 
-            # Verify prompt version exists if specified
             if config.prompt_version_id:
                 from app.repositories.settings import PromptVersionRepository
                 prompt_repo = PromptVersionRepository(self.matrix_repo.session)
@@ -118,7 +114,6 @@ class MatrixService:
 
         matrix = await self.matrix_repo.create(matrix)
 
-        # Build cells
         cells = []
         for tc_id in test_case_ids:
             for config in configurations:
@@ -195,7 +190,6 @@ class MatrixService:
 
             await self._execute_cell(cell, matrix)
 
-        # Update matrix status
         completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
         failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
 
@@ -220,18 +214,14 @@ class MatrixService:
         await self.cell_repo.session.flush()
 
         try:
-            # Get test case
             test_case = await self.case_repo.get(cell.test_case_id)
             if not test_case:
                 raise NotFoundError("TestCase", str(cell.test_case_id))
 
-            # Create a run for this cell
             config = cell.configuration
 
-            # Get target agent from configuration or use default
             agent_id = UUID(config.get("target_agent_id")) if config.get("target_agent_id") else None
             if not agent_id:
-                # Get default agent for suite
                 agents = await self.agent_repo.list_by_suite(matrix.suite_id)
                 if not agents:
                     raise ValidationError("No target agent configured for matrix cell")
@@ -241,7 +231,6 @@ class MatrixService:
             if not agent:
                 raise NotFoundError("TargetAgent", str(agent_id))
 
-            # Create run
             run = Run(
                 target_agent_id=agent.id,
                 suite_id=matrix.suite_id,
@@ -259,11 +248,9 @@ class MatrixService:
             )
             run = await self.run_repo.create(run)
 
-            # Link cell to run
             cell.run_id = run.id
             await self.cell_repo.session.flush()
 
-            # FIXED: Create proper repository instances for execution
             from app.repositories.runs import ExecutionRepository, ResultRepository
             from app.services.cost_tracking import CostTracker
 
@@ -276,12 +263,10 @@ class MatrixService:
             )
             await execution_service.execute_run(run.id)
 
-            # Score the run
             ScoringServiceClass = get_scoring_service()
             scoring_service = ScoringServiceClass(exec_repo, result_repo, self.case_repo)
             await scoring_service.score_run(run.id)
 
-            # Check for baseline and detect regressions
             baseline = await self.baseline_repo.get_active_for_suite(matrix.suite_id)
             if baseline and settings.REGRESSION_DETECTION_ENABLED:
                 detector = RegressionDetector(

@@ -1,4 +1,4 @@
-import ipaddress
+﻿import ipaddress
 import socket
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
@@ -29,12 +29,10 @@ def _validate_resolved_ip(host: str) -> None:
         resolved_ip = socket.gethostbyname(host)
         ip = ipaddress.ip_address(resolved_ip)
 
-        # Block private IPs if configured
         if settings.TARGET_AGENT_BLOCK_PRIVATE_IPS:
             if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
                 raise ValueError(f"Resolved IP {resolved_ip} is private/reserved")
 
-        # Additional check for localhost in production
         if settings.is_production and resolved_ip in ("127.0.0.1", "::1", "localhost"):
             raise ValueError("Localhost access blocked in production")
 
@@ -52,7 +50,6 @@ def validate_target_url(url: str) -> None:
     if allowed and parsed.hostname not in allowed:
         raise ValueError(f"Host {parsed.hostname} not in allowed hosts")
 
-    # Initial validation - note: must re-validate before actual connection due to DNS rebinding
     if settings.TARGET_AGENT_BLOCK_PRIVATE_IPS and _is_private_ip(parsed.hostname):
         raise ValueError(f"Private IP access blocked: {parsed.hostname}")
     if parsed.hostname in ("localhost", "127.0.0.1", "::1") and settings.is_production:
@@ -105,7 +102,6 @@ class HTTPTargetAgentProvider(TargetAgentProvider):
         request_body = self._build_request(input_text, context)
 
         try:
-            # SECURITY: Re-validate IP immediately before connection to prevent DNS rebinding
             parsed = urlparse(self.endpoint_url)
             if parsed.hostname:
                 _validate_resolved_ip(parsed.hostname)

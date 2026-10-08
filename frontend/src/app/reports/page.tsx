@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { formatDate, formatDuration, formatCost } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Download, FileText, BarChart, TrendingUp, AlertTriangle, CheckCircle, ArrowLeft, Plus } from "lucide-react";
 
 interface Report {
@@ -42,6 +43,7 @@ interface RunSummary {
 }
 
 export default function ReportsPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [runs, setRuns] = useState<RunSummary[]>([]);
@@ -74,15 +76,19 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchReports();
-        fetchRuns();
-      }
+    const token = getAccessToken();
+    if (token) {
+      fetchReports();
+      fetchRuns();
+      return;
     }
-  }, [isAuthenticated, isLoading, fetchReports, fetchRuns]);
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    } else if (!isLoading && isAuthenticated) {
+      fetchReports();
+      fetchRuns();
+    }
+  }, [isAuthenticated, isLoading, fetchReports, fetchRuns, router]);
 
   const handleGenerateReport = async () => {
     if (!selectedRun) return;
@@ -114,7 +120,7 @@ export default function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
+﻿import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import type {
   PaginatedResponse,
   TestSuite,
@@ -121,7 +121,6 @@ class ARTEFClient {
     return this.accessToken;
   }
 
-  // Suite operations
   async createSuite(data: { name: string; description?: string; test_cases?: any[] }): Promise<TestSuite> {
     const response = await this.client.post<TestSuite>("/api/v1/suites", data);
     return response.data;
@@ -167,7 +166,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Test Case operations
   async createTestCase(suiteId: string, data: Omit<TestCase, "id" | "suite_id" | "created_at" | "updated_at">): Promise<TestCase> {
     const response = await this.client.post<TestCase>(`/api/v1/suites/${suiteId}/test-cases`, data);
     return response.data;
@@ -183,7 +181,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Agent operations
   async createAgent(data: Omit<TargetAgent, "id" | "created_at" | "updated_at">): Promise<TargetAgent> {
     const response = await this.client.post<TargetAgent>("/api/v1/agents", data);
     return response.data;
@@ -213,7 +210,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Run operations
   async createRun(data: {
     target_agent_id: string;
     suite_id: string;
@@ -248,13 +244,11 @@ class ARTEFClient {
     await this.client.post(`/api/v1/runs/${runId}/cancel`);
   }
 
-  // Result operations
   async getResult(id: string): Promise<Result> {
     const response = await this.client.get<Result>(`/api/v1/results/${id}`);
     return response.data;
   }
 
-  // Baseline operations
   async createBaseline(data: {
     suite_id: string;
     suite_version: number;
@@ -295,7 +289,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Regression operations
   async getRegression(id: string): Promise<Regression> {
     const response = await this.client.get<Regression>(`/api/v1/regressions/${id}`);
     return response.data;
@@ -311,7 +304,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Review operations
   async listReviews(params?: { status?: string; severity?: string }): Promise<ReviewQueue[]> {
     const response = await this.client.get<ReviewQueue[]>("/api/v1/reviews", { params });
     return response.data;
@@ -327,7 +319,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Report operations
   async generateReport(data: {
     run_id: string;
     format: "json" | "markdown" | "html";
@@ -349,7 +340,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Evaluation operations
   async evaluateRAG(data: {
     query: string;
     answer: string;
@@ -392,19 +382,16 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Security operations
   async scanModel(modelPath: string): Promise<any> {
     const response = await this.client.post<any>("/api/v1/security/scan-model", { model_path: modelPath });
     return response.data;
   }
 
-  // Cost tracking
   async getCostSummary(days: number = 30): Promise<any> {
     const response = await this.client.get<any>(`/api/v1/cost/summary?days=${days}`);
     return response.data;
   }
 
-  // Red-team operations
   async generateAttacks(data: {
     category?: string;
     batch_size?: number;
@@ -423,7 +410,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Health check
   async healthCheck(): Promise<{ status: string; service: string }> {
     const response = await this.client.get<{ status: string; service: string }>("/api/v1/health/health");
     return response.data;
@@ -434,11 +420,7 @@ class ARTEFClient {
     return response.data;
   }
 
-  // =========================================================================
-  // Higher-level Evaluation Orchestration API
-  // =========================================================================
 
-  // Dataset operations
   async createDataset(data: {
     name: string;
     description?: string;
@@ -491,7 +473,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Matrix operations
   async createMatrix(data: {
     name: string;
     suite_id: string;
@@ -533,7 +514,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Pipeline operations
   async runPipeline(config: PipelineConfig): Promise<PipelineResult> {
     const response = await this.client.post<PipelineResult>("/api/v1/pipelines", config);
     return response.data;
@@ -554,7 +534,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Prompt version operations
   async listPrompts(): Promise<any[]> {
     const response = await this.client.get("/api/v1/settings/prompts");
     return response.data;
@@ -593,7 +572,6 @@ class ARTEFClient {
     return response.data;
   }
 
-  // Release Decision
   async getReleaseDecision(runId: string): Promise<{ decision: string; exit_code: number; details: any }> {
     const run = await this.getRun(runId);
     return {
@@ -604,9 +582,6 @@ class ARTEFClient {
     };
   }
 
-  // =========================================================================
-  // High-level Evaluation Workflow Methods
-  // =========================================================================
 
   /**
    * Run a complete evaluation pipeline with the given configuration.
@@ -635,7 +610,6 @@ class ARTEFClient {
     timeout_seconds?: number;
     tags?: string[];
   }): Promise<PipelineResult> {
-    // Create pipeline config
     const pipelineConfig: PipelineConfig = {
       name: config.name,
       description: config.description,
@@ -693,7 +667,6 @@ class ARTEFClient {
       throw new Error("No runs found for this pipeline");
     }
     
-    // Generate report for the first run (or could aggregate all)
     return this.generateReport({
       run_id: runIds[0],
       format,

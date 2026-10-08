@@ -53,6 +53,7 @@ class BaselineItemResponse(BaseModel):
         from_attributes = True
 
 
+@router.get("", response_model=list[BaselineResponse], include_in_schema=False)
 @router.get("/", response_model=list[BaselineResponse])
 async def list_baselines(
     skip: int = 0,

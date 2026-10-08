@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -59,20 +59,17 @@ class CostTracker:
         model_key = model.lower()
 
         if provider in self.pricing:
-            # Exact match
             if model_key in self.pricing[provider]:
                 pricing = self.pricing[provider][model_key]
                 input_cost = (input_tokens / 1000) * pricing.get("input", 0)
                 output_cost = (output_tokens / 1000) * pricing.get("output", 0)
                 return input_cost + output_cost
-            # Fallback: strip version suffix and try base model
             base_model = model_key.split("-202")[0].split("-20")[0]
             if base_model in self.pricing[provider]:
                 pricing = self.pricing[provider][base_model]
                 input_cost = (input_tokens / 1000) * pricing.get("input", 0)
                 output_cost = (output_tokens / 1000) * pricing.get("output", 0)
                 return input_cost + output_cost
-            # Partial prefix match for claude/gpt variants
             for key, pricing in self.pricing[provider].items():
                 if model_key.startswith(key) or key.startswith(model_key):
                     input_cost = (input_tokens / 1000) * pricing.get("input", 0)

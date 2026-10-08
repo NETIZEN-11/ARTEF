@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -11,40 +11,33 @@ class MatrixConfiguration(BaseModel):
     """Configuration for a single evaluation cell.
     
     Supports the full ARTEF evaluation matrix:
-    Test Case × Model × Prompt Version × Provider × Dataset
+    Test Case Ã— Model Ã— Prompt Version Ã— Provider Ã— Dataset
     """
-    # Model configuration
     model_id: str
     model_provider: str
     model_parameters: dict[str, Any] = Field(default_factory=dict)
 
-    # Prompt configuration
     prompt_version_id: UUID | None = None
     prompt_variables: dict[str, Any] = Field(default_factory=dict)
 
-    # Dataset configuration
     dataset_id: UUID | None = None
     dataset_version: int | None = None
     dataset_split: str | None = None  # train, val, test
 
-    # Provider configuration
     provider_config: dict[str, Any] = Field(default_factory=dict)
 
-    # Evaluation configuration
     judge_config: dict[str, Any] | None = None
     redteam_config: dict[str, Any] | None = None
 
-    # Execution configuration
     max_retries: int = 3
     timeout_seconds: int = 300
 
-    # Metadata
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class EvaluationCell(BaseModel):
-    """A single cell in the evaluation matrix: TestCase × Configuration."""
+    """A single cell in the evaluation matrix: TestCase Ã— Configuration."""
     id: UUID = Field(default_factory=uuid4)
     matrix_id: UUID
     test_case_id: UUID
@@ -77,7 +70,7 @@ class EvaluationMatrix(BaseModel):
     created_by: UUID | None = None
 
     def build_cells(self) -> list[EvaluationCell]:
-        """Build all cells from test cases × configurations."""
+        """Build all cells from test cases Ã— configurations."""
         cells = []
         for test_case_id in self.test_case_ids:
             for config in self.configurations:

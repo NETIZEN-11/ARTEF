@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+﻿from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
@@ -76,7 +76,6 @@ class TestMockScoringService:
 
     @pytest.mark.asyncio
     async def test_score_neutral_response(self, mock_execution_repo, mock_result_repo, mock_case_repo, test_case, execution):
-        # Create a test case with LLM_RUBRIC to test the mock judge
         test_case_llm = TestCase(
             id=uuid4(),
             suite_id=uuid4(),

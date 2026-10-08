@@ -1,14 +1,11 @@
-# ARTEF Configuration File
-project_name: test-project
+﻿project_name: test-project
 version: "1.0.0"
 
-# Target agent configuration
 agent:
   name: "my-agent"
   endpoint: "http://localhost:8080/chat"
   timeout: 30
   
-# Evaluation settings
 evaluation:
   providers:
     - name: openai
@@ -23,7 +20,6 @@ evaluation:
     - type: keyword
     - type: refusal
 
-# Red team settings
 redteam:
   enabled: true
   strategies:
@@ -32,7 +28,6 @@ redteam:
     - pii_extraction
   max_turns: 10
   
-# CI/CD gate thresholds
 gate:
   block_on:
     - critical_severity

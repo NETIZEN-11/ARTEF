@@ -1,12 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { formatDate, formatDuration, formatCost, getStatusColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import {
   BarChart,
   Bar,
@@ -57,9 +58,17 @@ interface Stats {
 }
 
 export default function DashboardPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentRuns, setRecentRuns] = useState<RunSummary[]>([]);
+  const [systemHealth, setSystemHealth] = useState<{
+    status: "Healthy" | "Degraded" | "Offline";
+    message: string;
+  }>({
+    status: "Healthy",
+    message: "Checking services...",
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,27 +77,42 @@ export default function DashboardPage() {
     try {
       setError(null);
       
-      // Fetch real data from backend
-      const [statsRes, runsRes] = await Promise.all([
+      const [statsRes, runsRes, healthRes] = await Promise.all([
         api.get("/runs/stats").catch(() => ({ data: getEmptyStats() })),
         api.get("/runs?limit=5&sort=created_at:desc").catch(() => ({ data: [] })),
+        api.get("/monitoring/dashboard").catch(() => api.get("/").catch(() => null)),
       ]);
       
       setStats(statsRes.data);
       setRecentRuns(Array.isArray(runsRes.data) ? runsRes.data : runsRes.data.items || []);
+
+      if (healthRes && healthRes.data) {
+        const isHealthy = healthRes.data.status === "running" || healthRes.data.total_alerts !== undefined;
+        setSystemHealth({
+          status: isHealthy ? "Healthy" : "Degraded",
+          message: healthRes.data.version ? `v${healthRes.data.version} active` : "All services operational",
+        });
+      } else {
+        setSystemHealth({
+          status: "Healthy",
+          message: "API connected",
+        });
+      }
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
       setError("Failed to load dashboard data. Please check your connection and try again.");
-      // Set empty state on complete failure
       setStats(getEmptyStats());
       setRecentRuns([]);
+      setSystemHealth({
+        status: "Offline",
+        message: "API unreachable",
+      });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  // Helper function for empty stats
   const getEmptyStats = (): Stats => ({
     total_runs: 0,
     pass_rate: 0,
@@ -111,26 +135,24 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchData();
-      }
+    setMounted(true);
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/login");
+    } else {
+      fetchData();
     }
-  }, [isAuthenticated, isLoading, fetchData]);
+  }, [fetchData, router]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
+    if (!mounted || !getAccessToken() || loading) return;
     const interval = setInterval(() => {
-      if (isAuthenticated && !loading) {
-        fetchData();
-      }
+      fetchData();
     }, 30000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, loading, fetchData]);
+  }, [mounted, loading, fetchData]);
 
-  if (isLoading || !isAuthenticated) {
+  if (!mounted || loading) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
@@ -142,21 +164,21 @@ export default function DashboardPage() {
 
   const passRateData = stats?.pass_rate_trend && stats.pass_rate_trend.length > 0
     ? stats.pass_rate_trend.map((value, index) => ({
-        name: `Week ${index + 1}`,
+        name: `Run ${index + 1}`,
         value,
       }))
     : [];
 
   const regressionData = stats?.regression_trend && stats.regression_trend.length > 0
     ? stats.regression_trend.map((value, index) => ({
-        name: `Week ${index + 1}`,
+        name: `Run ${index + 1}`,
         value,
       }))
     : [];
 
   const costData = stats?.cost_trend && stats.cost_trend.length > 0
     ? stats.cost_trend.map((value, index) => ({
-        name: `Week ${index + 1}`,
+        name: `Run ${index + 1}`,
         value,
       }))
     : [];
@@ -280,11 +302,25 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">System Health</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              {systemHealth.status === "Healthy" ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : systemHealth.status === "Degraded" ? (
+                <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              )}
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">Healthy</div>
-              <p className="text-xs text-muted-foreground">All services operational</p>
+              <div className={`text-2xl font-bold ${
+                systemHealth.status === "Healthy"
+                  ? "text-green-600"
+                  : systemHealth.status === "Degraded"
+                  ? "text-yellow-600"
+                  : "text-red-600"
+              }`}>
+                {systemHealth.status}
+              </div>
+              <p className="text-xs text-muted-foreground">{systemHealth.message}</p>
             </CardContent>
           </Card>
         </div>
@@ -469,6 +505,9 @@ export default function DashboardPage() {
                           {run.high_count > 0 && <span className="text-orange-600 font-medium ml-2">High: {run.high_count}</span>}
                           {run.medium_count > 0 && <span className="text-yellow-600 font-medium ml-2">Medium: {run.medium_count}</span>}
                           {run.low_count > 0 && <span className="text-blue-600 font-medium ml-2">Low: {run.low_count}</span>}
+                          {run.critical_count === 0 && run.high_count === 0 && run.medium_count === 0 && run.low_count === 0 && (
+                            <span className="text-muted-foreground text-xs">0 findings</span>
+                          )}
                         </td>
                         <td className="p-4">{formatCost(run.total_cost_usd)}</td>
                         <td className="p-4 text-sm text-muted-foreground">{formatDate(run.created_at)}</td>

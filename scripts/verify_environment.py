@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Verify the development environment is correctly set up."""
 
 import os
@@ -11,11 +11,10 @@ import chromadb
 import boto3
 from botocore.exceptions import ClientError
 
-# SECURITY: Load credentials from environment variables instead of hardcoding
 def get_env(key: str, default: str = None) -> str:
     value = os.getenv(key, default)
     if value is None:
-        print(f"⚠️  Warning: {key} not set, using default '{default}'")
+        print(f"âš ï¸  Warning: {key} not set, using default '{default}'")
         return default
     return value
 
@@ -30,10 +29,10 @@ async def check_postgres():
         )
         version = await conn.fetchval("SELECT version()")
         await conn.close()
-        print(f"✅ PostgreSQL: {version.split(',')[0]}")
+        print(f"âœ… PostgreSQL: {version.split(',')[0]}")
         return True
     except Exception as e:
-        print(f"❌ PostgreSQL: {e}")
+        print(f"âŒ PostgreSQL: {e}")
         return False
 
 async def check_redis():
@@ -45,10 +44,10 @@ async def check_redis():
         )
         r.ping()
         info = r.info()
-        print(f"✅ Redis: {info['redis_version']}")
+        print(f"âœ… Redis: {info['redis_version']}")
         return True
     except Exception as e:
-        print(f"❌ Redis: {e}")
+        print(f"âŒ Redis: {e}")
         return False
 
 async def check_chromadb():
@@ -58,10 +57,10 @@ async def check_chromadb():
             port=int(get_env("CHROMA_PORT", "8000"))
         )
         client.heartbeat()
-        print("✅ ChromaDB: Connected")
+        print("âœ… ChromaDB: Connected")
         return True
     except Exception as e:
-        print(f"❌ ChromaDB: {e}")
+        print(f"âŒ ChromaDB: {e}")
         return False
 
 async def check_minio():
@@ -75,55 +74,55 @@ async def check_minio():
         )
         bucket = get_env("S3_BUCKET", "redteam-artifacts")
         client.head_bucket(Bucket=bucket)
-        print("✅ MinIO: Connected")
+        print("âœ… MinIO: Connected")
         return True
     except ClientError as e:
         if e.response['Error']['Code'] == '404':
-            print("⚠️  MinIO: Bucket not found (will be created)")
+            print("âš ï¸  MinIO: Bucket not found (will be created)")
             return True
-        print(f"❌ MinIO: {e}")
+        print(f"âŒ MinIO: {e}")
         return False
     except Exception as e:
-        print(f"❌ MinIO: {e}")
+        print(f"âŒ MinIO: {e}")
         return False
 
 def check_python():
     version = sys.version_info
     if version.major == 3 and version.minor >= 11:
-        print(f"✅ Python: {version.major}.{version.minor}.{version.micro}")
+        print(f"âœ… Python: {version.major}.{version.minor}.{version.micro}")
         return True
     else:
-        print(f"❌ Python: {version.major}.{version.minor}.{version.micro} (requires 3.11+)")
+        print(f"âŒ Python: {version.major}.{version.minor}.{version.micro} (requires 3.11+)")
         return False
 
 def check_docker():
     try:
         result = subprocess.run(["docker", "--version"], capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"✅ Docker: {result.stdout.strip()}")
+            print(f"âœ… Docker: {result.stdout.strip()}")
             return True
         else:
-            print(f"❌ Docker: Not found")
+            print(f"âŒ Docker: Not found")
             return False
     except Exception:
-        print("❌ Docker: Not found")
+        print("âŒ Docker: Not found")
         return False
 
 def check_node():
     try:
         result = subprocess.run(["node", "--version"], capture_output=True, text=True)
         if result.returncode == 0:
-            print(f"✅ Node.js: {result.stdout.strip()}")
+            print(f"âœ… Node.js: {result.stdout.strip()}")
             return True
         else:
-            print(f"❌ Node.js: Not found")
+            print(f"âŒ Node.js: Not found")
             return False
     except Exception:
-        print("❌ Node.js: Not found")
+        print("âŒ Node.js: Not found")
         return False
 
 async def main():
-    print("🔍 Verifying environment...\n")
+    print("ðŸ” Verifying environment...\n")
     
     checks = [
         ("Python", check_python()),
@@ -135,17 +134,17 @@ async def main():
         ("MinIO", await check_minio()),
     ]
     
-    print("\n📋 Summary:")
+    print("\nðŸ“‹ Summary:")
     all_passed = True
     for name, passed in checks:
         if not passed:
             all_passed = False
     
     if all_passed:
-        print("\n✅ All checks passed! Environment is ready.")
+        print("\nâœ… All checks passed! Environment is ready.")
         sys.exit(0)
     else:
-        print("\n❌ Some checks failed. Please fix the issues above.")
+        print("\nâŒ Some checks failed. Please fix the issues above.")
         sys.exit(1)
 
 if __name__ == "__main__":

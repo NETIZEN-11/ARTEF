@@ -16,7 +16,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 RUN pip install --no-cache-dir uv && \
-    uv pip install --system --no-cache -r pyproject.toml
+    uv pip install --system --no-cache -e .
 
 COPY backend ./backend
 COPY evaluation ./evaluation
@@ -35,5 +35,8 @@ RUN useradd --create-home --shell /bin/bash appuser && \
 USER appuser
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
+    CMD curl -fsS http://localhost:8000/api/v1/health || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

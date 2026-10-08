@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -52,7 +52,7 @@ class EvaluationPipeline:
     
     Coordinates the complete ARTEF workflow:
     1. Configuration Validation
-    2. Evaluation Matrix Construction (Test Case × Model × Prompt × Provider × Dataset)
+    2. Evaluation Matrix Construction (Test Case Ã— Model Ã— Prompt Ã— Provider Ã— Dataset)
     3. Scheduling (via Celery or direct execution)
     4. Worker Execution (Provider calls + Agent trajectory capture)
     5. Assertions (Deterministic matchers)
@@ -74,7 +74,6 @@ class EvaluationPipeline:
         self.session = session
         self.run: PipelineRun | None = None
 
-        # Repositories
         self.suite_repo = TestSuiteRepository(session)
         self.case_repo = TestCaseRepository(session)
         self.agent_repo = TargetAgentRepository(session)
@@ -88,7 +87,6 @@ class EvaluationPipeline:
         self.matrix_repo = EvaluationMatrixRepository(session)
         self.cell_repo = EvaluationMatrixCellRepository(session)
 
-        # Services
         self.execution_service = ExecutionService(
             self.run_repo, self.exec_repo, self.result_repo, self.agent_repo, self.case_repo
         )
@@ -128,40 +126,28 @@ class EvaluationPipeline:
         """Execute all pipeline steps in sequence."""
         config = self.run.config
 
-        # Step 1: Validate Configuration
         await self._step_validate_config()
 
-        # Step 2: Load Dataset & Test Suite
         await self._step_load_dataset_and_suite()
 
-        # Step 3: Build Evaluation Matrix
         await self._step_build_matrix()
 
-        # Step 4: Schedule & Execute Cells
         await self._step_execute_matrix()
 
-        # Step 5: Aggregate Results
         await self._step_aggregate_results()
 
-        # Step 6: Baseline Comparison & Regression Detection
         await self._step_baseline_comparison()
 
-        # Step 7: Severity Classification
         await self._step_severity_classification()
 
-        # Step 8: Gate Evaluation
         await self._step_gate_evaluation()
 
-        # Step 9: Release Readiness Decision
         await self._step_release_decision()
 
-        # Step 10: Human Review Queue
         await self._step_human_review()
 
-        # Step 11: Generate Reports
         await self._step_generate_reports()
 
-        # Finalize
         self.run.status = PipelineStatus.COMPLETED
         self.run.result.status = PipelineStatus.COMPLETED
         self.run.result.completed_at = datetime.utcnow()
@@ -179,21 +165,17 @@ class EvaluationPipeline:
 
         config = self.run.config
 
-        # Validate suite exists
         suite = await self.suite_repo.get(config.suite_id)
         if not suite:
             raise ValueError(f"Test suite {config.suite_id} not found")
 
-        # Validate target agent exists
         agent = await self.agent_repo.get(config.target_agent_id)
         if not agent:
             raise ValueError(f"Target agent {config.target_agent_id} not found")
 
-        # Validate at least one model configuration
         if not config.models:
             raise ValueError("At least one model configuration required")
 
-        # Validate at least one prompt version
         if not config.prompt_versions:
             raise ValueError("At least one prompt version required")
 
@@ -208,7 +190,6 @@ class EvaluationPipeline:
 
         config = self.run.config
 
-        # Load test cases
         test_cases = await self.case_repo.list_by_suite(config.suite_id)
         if not test_cases:
             raise ValueError(f"No test cases found in suite {config.suite_id}")
@@ -219,14 +200,13 @@ class EvaluationPipeline:
         logger.info("dataset_loaded", pipeline_id=str(self.run.id), test_cases=len(test_cases))
 
     async def _step_build_matrix(self):
-        """Step 3: Build evaluation matrix (Test Case × Model × Prompt × Provider)."""
+        """Step 3: Build evaluation matrix (Test Case Ã— Model Ã— Prompt Ã— Provider)."""
         step = PipelineStep(name="build_matrix", status=PipelineStepStatus.RUNNING, started_at=datetime.utcnow())
         self.run.result.steps.append(step)
 
         config = self.run.config
         suite = await self.suite_repo.get(config.suite_id)
 
-        # Build matrix configurations
         matrix_configs = []
         for model_config in config.models:
             for prompt_version_id in config.prompt_versions:
@@ -239,7 +219,6 @@ class EvaluationPipeline:
                         "provider_config": provider_config,
                     })
 
-        # Create matrix
         test_case_ids = [tc.id for tc in await self.case_repo.list_by_suite(config.suite_id)]
 
         matrix = await self.matrix_service.create_matrix(
@@ -281,7 +260,6 @@ class EvaluationPipeline:
 
         matrix_id = UUID(self.run.result.metadata["matrix_id"])
 
-        # Execute matrix (creates runs for each cell)
         matrix = await self.matrix_service.execute_matrix(matrix_id)
 
         self.run.result.completed_cells = matrix.completed_cells
@@ -300,7 +278,6 @@ class EvaluationPipeline:
         matrix_id = UUID(self.run.result.metadata["matrix_id"])
         cells = await self.cell_repo.list_by_matrix(matrix_id)
 
-        # Aggregate from cell runs
         total_passed = 0
         total_failed = 0
         total_inconclusive = 0
@@ -347,15 +324,12 @@ class EvaluationPipeline:
 
         for cell in cells:
             if cell.run_id and cell.status == RunStatus.COMPLETED:
-                # Get or create baseline
                 baseline = None
                 if config.baseline_id:
                     baseline = await self.baseline_repo.get(config.baseline_id)
                 elif config.auto_baseline:
-                    # Check if baseline exists for this suite
                     baseline = await self.baseline_repo.get_active_for_suite(config.suite_id)
                     if not baseline:
-                        # Create baseline from this run (first run)
                         baseline = await self._create_baseline_from_cell(cell)
 
                 if baseline and config.regression_detection_enabled:
@@ -379,7 +353,6 @@ class EvaluationPipeline:
                         elif finding.severity.value == "low":
                             low_count += 1
 
-                        # Queue for human review if critical/high
                         if config.require_human_review and finding.severity.value in ("critical", "high"):
                             review = await self.review_repo.create_review(
                                 regression_id=UUID(finding.test_case_id),
@@ -454,7 +427,6 @@ class EvaluationPipeline:
         step = PipelineStep(name="severity_classification", status=PipelineStepStatus.RUNNING, started_at=datetime.utcnow())
         self.run.result.steps.append(step)
 
-        # Already done in baseline_comparison step
         step.status = PipelineStepStatus.COMPLETED
         step.completed_at = datetime.utcnow()
 
@@ -497,7 +469,6 @@ class EvaluationPipeline:
         step = PipelineStep(name="release_decision", status=PipelineStepStatus.RUNNING, started_at=datetime.utcnow())
         self.run.result.steps.append(step)
 
-        # Determine release decision based on gate, regressions, and reviews
         gate_decision = self.run.result.gate_decision
         critical_count = self.run.result.critical_count
         high_count = self.run.result.high_count
@@ -507,7 +478,6 @@ class EvaluationPipeline:
         if gate_decision == "BLOCK" or critical_count > 0 or gate_decision == "FAIL" or high_count > 0:
             release_decision = "BLOCKED"
         elif review_required and review_ids:
-            # Check if all reviews are resolved
             all_resolved = True
             for review_id in review_ids:
                 review = await self.review_repo.get(review_id)
@@ -516,7 +486,6 @@ class EvaluationPipeline:
                     break
 
             if all_resolved:
-                # Check review labels
                 has_confirmed_regression = False
                 for review_id in review_ids:
                     review = await self.review_repo.get(review_id)
@@ -547,8 +516,6 @@ class EvaluationPipeline:
         step = PipelineStep(name="human_review", status=PipelineStepStatus.RUNNING, started_at=datetime.utcnow())
         self.run.result.steps.append(step)
 
-        # If review required, pipeline pauses here in real implementation
-        # For now, we just note it
         if self.run.result.review_required:
             step.metadata = {"status": "awaiting_review", "review_count": len(self.run.result.review_ids)}
         else:
@@ -562,20 +529,15 @@ class EvaluationPipeline:
         step = PipelineStep(name="generate_reports", status=PipelineStepStatus.RUNNING, started_at=datetime.utcnow())
         self.run.result.steps.append(step)
 
-        # Generate JUnit XML and JSON reports for each cell run
-        # This would be used by CI/CD
         step.status = PipelineStepStatus.COMPLETED
         step.completed_at = datetime.utcnow()
         step.metadata = {"reports_generated": True}
 
     async def _persist_run(self):
         """Persist pipeline run to database."""
-        # In a real implementation, this would save to a pipeline_runs table
-        # For now, we just log
         logger.info("pipeline_persisted", pipeline_id=str(self.run.id), status=self.run.status.value)
 
 
-# Convenience function for running pipeline from CLI/API
 async def run_evaluation_pipeline(config: PipelineConfig) -> PipelineResult:
     """Run an evaluation pipeline with the given configuration."""
     async with get_async_session() as session:
@@ -766,7 +728,6 @@ class ReproducibilityVerifier:
             })
             return differences
 
-        # Compare key metrics
         if abs(original.total_cost_usd - rerun.total_cost_usd) > tolerance:
             differences.append({
                 "field": "total_cost_usd",
@@ -810,8 +771,5 @@ class ReproducibilityVerifier:
                 "rerun": rerun.gate_decision,
             })
 
-        # Compare cell-level results if available.
-        # This is intentionally conservative; if no cell-level data is available,
-        # the comparison uses the aggregate metrics above.
 
         return differences

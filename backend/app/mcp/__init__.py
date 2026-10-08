@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import json
 import time
 from datetime import datetime
@@ -65,10 +65,8 @@ async def check_guardrails(messages: list[MCPMessage]) -> list[GuardrailCheckRes
     """Check messages against guardrails."""
     results = []
     for message in messages:
-        # Check for jailbreak patterns
         import re
 
-        # Enhanced pattern detection for prompt injection
         patterns = {
             "jailbreak": [
                 re.compile(r"(ignore|disregard|override|forget)\s+(your|the|all|previous)\s+(instructions|rules|system|prompts?)", re.IGNORECASE),
@@ -99,7 +97,6 @@ async def check_guardrails(messages: list[MCPMessage]) -> list[GuardrailCheckRes
         for guardrail_type, guardrail_patterns in patterns.items():
             for pattern in guardrail_patterns:
                 for msg in messages:
-                    # Check content length to prevent evasion via huge payloads
                     if len(msg.content) > 50000:  # 50KB limit per message
                         results.append(GuardrailCheckResult(
                             passed=False,
@@ -148,7 +145,6 @@ async def proxy_request(
                 },
             )
 
-    # Simulate LLM call
     content = _generate_response(request.messages)
 
     latency_ms = int((time.time() - start_time) * 1000)

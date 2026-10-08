@@ -77,7 +77,7 @@ def _sanitize_agent_response(agent, current_user: TokenData) -> dict:
 
 class TargetAgentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    
+
     id: UUID
     name: str
     description: str | None = None

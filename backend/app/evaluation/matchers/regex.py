@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import re
 
 from app.core.config import get_settings
@@ -10,7 +10,6 @@ settings = get_settings()
 
 
 class RegexMatcher(BaseMatcher):
-    # Dangerous regex patterns that can cause catastrophic backtracking
     DANGEROUS_PATTERNS = [
         r"\(.*\)\+",  # (x+)+
         r"\(.*\)\*",  # (x*)*
@@ -38,7 +37,6 @@ class RegexMatcher(BaseMatcher):
                 [self._create_evidence("regex_matcher", "No pattern configured", False)],
             )
 
-        # SECURITY: Validate pattern for ReDoS risks
         try:
             self._validate_pattern_safety(config.pattern)
         except ValueError as e:
@@ -49,7 +47,6 @@ class RegexMatcher(BaseMatcher):
             )
 
         try:
-            # Add timeout to compilation as well
             pattern = await asyncio.wait_for(
                 asyncio.to_thread(re.compile, config.pattern),
                 timeout=1.0  # 1 second max for compilation

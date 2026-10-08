@@ -1,4 +1,4 @@
-"""
+﻿"""
 Core evaluation functions for ARTEF library API.
 """
 
@@ -8,7 +8,6 @@ from typing import List, Dict, Any, Optional, Union
 from pathlib import Path
 import sys
 
-# Add backend to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
 
 
@@ -114,20 +113,17 @@ def evaluate(
         ...     print("FAILED: Safety regression detected!")
     """
     
-    # Validate inputs
     if not prompts and not test_suite:
         raise ValueError("Must provide either 'prompts' or 'test_suite'")
     
     if prompts and test_suite:
         raise ValueError("Cannot provide both 'prompts' and 'test_suite'")
     
-    # Parse agent config
     if isinstance(agent, str):
         agent_config = {"endpoint": agent, "name": "default-agent"}
     else:
         agent_config = agent
     
-    # Build test cases from prompts
     test_cases = []
     if prompts:
         for i, prompt in enumerate(prompts):
@@ -138,7 +134,6 @@ def evaluate(
                 metadata={"id": f"test-{i+1}"}
             ))
     
-    # Run async evaluation
     try:
         result = asyncio.run(_run_evaluation_async(
             agent_config=agent_config,
@@ -151,7 +146,6 @@ def evaluate(
         return result
     
     except Exception as e:
-        # Return error result
         return EvaluationResult(
             total_tests=len(test_cases) if test_cases else 0,
             passed=0,
@@ -184,7 +178,6 @@ async def _run_evaluation_async(
     7. Calculate metrics
     """
     
-    # Stub implementation - return mock results
     total_tests = len(test_cases)
     passed = int(total_tests * 0.9)  # Mock 90% pass rate
     failed = total_tests - passed

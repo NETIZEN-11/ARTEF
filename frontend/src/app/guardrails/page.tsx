@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Shield, ShieldAlert, ShieldCheck, Eye, Ban, Activity, Settings, AlertTriangle, Clock } from "lucide-react";
 
 interface Guardrail {
@@ -31,6 +32,7 @@ interface GuardrailFinding {
 }
 
 export default function GuardrailsPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [guardrails, setGuardrails] = useState<Guardrail[]>([]);
   const [findings, setFindings] = useState<GuardrailFinding[]>([]);
@@ -70,11 +72,11 @@ export default function GuardrailsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) window.location.href = "/login";
-      else fetchData();
-    }
-  }, [isAuthenticated, isLoading, fetchData]);
+    const token = getAccessToken();
+    if (token) { fetchData(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchData();
+  }, [isAuthenticated, isLoading, fetchData, router]);
 
   const handleTest = async () => {
     if (!testInput) return;
@@ -91,7 +93,7 @@ export default function GuardrailsPage() {
     } finally { setTesting(false); }
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
   }
 
@@ -104,10 +106,10 @@ export default function GuardrailsPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Total Guardrails</CardTitle><Shield className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.total || 4}</div><p className="text-xs text-muted-foreground">Active protections</p></CardContent></Card>
+          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Total Guardrails</CardTitle><Shield className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.total}</div><p className="text-xs text-muted-foreground">Active protections</p></CardContent></Card>
           <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Blocked</CardTitle><Ban className="h-4 w-4 text-destructive" /></CardHeader><CardContent><div className="text-2xl font-bold text-destructive">{stats.blocked}</div><p className="text-xs text-muted-foreground">Attacks prevented</p></CardContent></Card>
           <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Monitoring</CardTitle><Eye className="h-4 w-4 text-blue-600" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.monitoring}</div><p className="text-xs text-muted-foreground">In monitor mode</p></CardContent></Card>
-          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Critical</CardTitle><AlertTriangle className="h-4 w-4 text-red-600" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.critical || 2}</div><p className="text-xs text-muted-foreground">High severity</p></CardContent></Card>
+          <Card><CardHeader className="pb-2 flex flex-row items-center justify-between"><CardTitle className="text-sm">Critical</CardTitle><AlertTriangle className="h-4 w-4 text-red-600" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.critical}</div><p className="text-xs text-muted-foreground">High severity</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="realtime" className="space-y-4">

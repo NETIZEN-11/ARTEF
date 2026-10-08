@@ -1,4 +1,4 @@
-from contextlib import asynccontextmanager
+﻿from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,7 +55,6 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description="Agent Red-Teaming & Evaluation Framework API",
     lifespan=lifespan,
-    # SECURITY: Disable API documentation in production
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
     openapi_url="/openapi.json" if not settings.is_production else None,
@@ -80,12 +79,10 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Validate CORS origins in production: wildcard not allowed with credentials
 cors_origins = settings.cors_origins_list
 if settings.is_production and "*" in cors_origins:
     raise RuntimeError("Wildcard CORS origin not allowed in production with credentials")
 
-# In development, allow any localhost port via regex to prevent CORS failures on random Next.js ports (3000-3010)
 cors_regex = r"http://localhost:\d+" if settings.is_development else None
 
 app.add_middleware(
@@ -121,7 +118,6 @@ def _cors_headers_for_request(request: Request) -> dict[str, str]:
     origin = request.headers.get("origin", "")
     if not origin:
         return {}
-    # Allow any localhost port in dev, otherwise check explicit list
     cors_origins = settings.cors_origins_list
     cors_regex = r"http://localhost:\d+" if settings.is_development else None
     allowed = False

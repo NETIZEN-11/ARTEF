@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 ARTEF CLI - Command-line interface for Agent Red-Teaming & Evaluation Framework
 
@@ -17,7 +17,6 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-# Add backend to path
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 
 console = Console()
@@ -47,25 +46,21 @@ def init(name: str, example: Optional[str]):
         console.print(f"[bold red]Error:[/bold red] Directory '{name}' already exists")
         sys.exit(1)
     
-    # Create project structure
     project_dir.mkdir()
     (project_dir / "suites").mkdir()
     (project_dir / "prompts").mkdir()
     (project_dir / "data").mkdir()
     (project_dir / "reports").mkdir()
     
-    # Create artef.yaml config
     config_content = f"""# ARTEF Configuration File
 project_name: {name}
 version: "1.0.0"
 
-# Target agent configuration
 agent:
   name: "my-agent"
   endpoint: "http://localhost:8080/chat"
   timeout: 30
   
-# Evaluation settings
 evaluation:
   providers:
     - name: openai
@@ -80,7 +75,6 @@ evaluation:
     - type: keyword
     - type: refusal
 
-# Red team settings
 redteam:
   enabled: true
   strategies:
@@ -89,7 +83,6 @@ redteam:
     - pii_extraction
   max_turns: 10
   
-# CI/CD gate thresholds
 gate:
   block_on:
     - critical_severity
@@ -101,7 +94,6 @@ gate:
     
     (project_dir / "artef.yaml").write_text(config_content)
     
-    # Create example test suite if requested
     if example:
         if example == "getting-started":
             suite_content = """name: "Getting Started Suite"
@@ -134,13 +126,13 @@ test_cases:
     
     console.print(f"\n[green]SUCCESS[/green] Created project structure:")
     console.print(f"  {name}/")
-    console.print(f"  ├── artef.yaml")
-    console.print(f"  ├── suites/")
+    console.print(f"  â”œâ”€â”€ artef.yaml")
+    console.print(f"  â”œâ”€â”€ suites/")
     if example:
-        console.print(f"  │   └── {example}.yaml")
-    console.print(f"  ├── prompts/")
-    console.print(f"  ├── data/")
-    console.print(f"  └── reports/")
+        console.print(f"  â”‚   â””â”€â”€ {example}.yaml")
+    console.print(f"  â”œâ”€â”€ prompts/")
+    console.print(f"  â”œâ”€â”€ data/")
+    console.print(f"  â””â”€â”€ reports/")
     console.print(f"\n[bold]Next steps:[/bold]")
     console.print(f"  1. cd {name}")
     console.print(f"  2. Edit artef.yaml with your agent details")
@@ -161,7 +153,6 @@ def eval(agent: str, suite: str, baseline: Optional[str], output: str, output_fi
     if baseline:
         console.print(f"  Baseline: {baseline}")
     
-    # Import here to avoid slow startup
     from scripts.run_evaluation import run_evaluation as run_eval_impl
     
     try:
@@ -172,14 +163,13 @@ def eval(agent: str, suite: str, baseline: Optional[str], output: str, output_fi
         ) as progress:
             progress.add_task("Executing tests...", total=None)
             
-            # Run evaluation (this would need async wrapper)
             success = asyncio.run(run_eval_impl(agent, suite, baseline))
             
         if success:
-            console.print("\n[bold green]✓ Evaluation passed[/bold green]")
+            console.print("\n[bold green]âœ“ Evaluation passed[/bold green]")
             sys.exit(0)
         else:
-            console.print("\n[bold red]✗ Evaluation failed[/bold red]")
+            console.print("\n[bold red]âœ— Evaluation failed[/bold red]")
             sys.exit(1)
             
     except Exception as e:
@@ -196,12 +186,10 @@ def view(run_id: Optional[str], suite: Optional[str], agent: Optional[str], limi
     """View evaluation results and history."""
     if run_id:
         console.print(f"[bold]Viewing run:[/bold] {run_id}")
-        # Implementation would fetch from database
         console.print("[yellow]Note: Database integration required[/yellow]")
     else:
         console.print(f"[bold]Recent evaluation runs:[/bold]")
         
-        # Mock table for now
         table = Table(title="Evaluation History")
         table.add_column("Run ID", style="cyan")
         table.add_column("Agent", style="magenta")
@@ -210,7 +198,6 @@ def view(run_id: Optional[str], suite: Optional[str], agent: Optional[str], limi
         table.add_column("Score")
         table.add_column("Date")
         
-        # This would be fetched from database
         table.add_row(
             "run-001",
             "my-agent",
@@ -268,7 +255,6 @@ def redteam_generate(count: int, category: Optional[str]):
     ) as progress:
         progress.add_task("Generating attacks...", total=None)
         
-        # This would call the red team generator
         console.print("[yellow]Note: Red team generator integration required[/yellow]")
     
     console.print(f"[green]SUCCESS[/green] Generated {count} test cases")
@@ -292,7 +278,6 @@ def redteam_run(agent: str, suite: Optional[str]):
     ) as progress:
         progress.add_task("Executing attacks...", total=None)
         
-        # This would call the red team executor
         console.print("[yellow]Note: Red team execution requires backend API[/yellow]")
     
     console.print("[green]SUCCESS[/green] Red team execution complete")
@@ -334,7 +319,6 @@ def cache_clear(all: bool, provider: Optional[str]):
     """Clear evaluation cache."""
     if all:
         console.print("[bold]Clearing all cache entries...[/bold]")
-        # This would connect to Redis and clear
         console.print("[yellow]Note: Redis integration required[/yellow]")
         console.print("[green]SUCCESS[/green] Cache cleared")
     elif provider:

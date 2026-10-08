@@ -78,6 +78,7 @@ async def create_guardrail_config(
     return config
 
 
+@router.get("", include_in_schema=False)
 @router.get("/")
 async def list_guardrails(
     db: AsyncSession = Depends(get_db),
@@ -88,6 +89,7 @@ async def list_guardrails(
     return guardrails
 
 
+@router.post("", status_code=201, include_in_schema=False)
 @router.post("/", status_code=201)
 async def create_guardrail(
     guardrail_data: GuardrailCreate,

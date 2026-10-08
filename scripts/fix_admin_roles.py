@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Fix admin user roles."""
 
 import asyncio
@@ -17,7 +17,6 @@ async def fix_roles():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
-        # Create permissions
         permissions = {}
         permission_list = [
             ("users:read", "users", "read"),
@@ -39,7 +38,6 @@ async def fix_roles():
         ]
         
         for perm_name, resource, action in permission_list:
-            # Check if exists
             result = await session.execute(
                 select(Permission).where(Permission.name == perm_name)
             )
@@ -50,9 +48,8 @@ async def fix_roles():
                 await session.flush()
             permissions[perm_name] = perm
         
-        print(f"✓ Created/verified {len(permissions)} permissions")
+        print(f"âœ“ Created/verified {len(permissions)} permissions")
         
-        # Create admin role
         result = await session.execute(select(Role).where(Role.name == "admin"))
         admin_role = result.scalar_one_or_none()
         
@@ -65,13 +62,11 @@ async def fix_roles():
             )
             session.add(admin_role)
             await session.flush()
-            print("✓ Created admin role")
+            print("âœ“ Created admin role")
         else:
-            # Update permissions
             admin_role.permissions = list(permissions.values())
-            print("✓ Updated admin role permissions")
+            print("âœ“ Updated admin role permissions")
         
-        # Get admin user and assign role
         result = await session.execute(
             select(User).where(User.username == "admin").options(selectinload(User.roles))
         )
@@ -80,14 +75,14 @@ async def fix_roles():
         if admin_user:
             if admin_role not in admin_user.roles:
                 admin_user.roles.append(admin_role)
-                print(f"✓ Assigned admin role to user {admin_user.username}")
+                print(f"âœ“ Assigned admin role to user {admin_user.username}")
             else:
-                print(f"✓ User {admin_user.username} already has admin role")
+                print(f"âœ“ User {admin_user.username} already has admin role")
         else:
-            print("✗ Admin user not found")
+            print("âœ— Admin user not found")
         
         await session.commit()
-        print("\n✅ Roles and permissions fixed successfully!")
+        print("\nâœ… Roles and permissions fixed successfully!")
     
     await engine.dispose()
 

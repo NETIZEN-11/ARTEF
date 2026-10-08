@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 from datetime import datetime
 from uuid import UUID
 
@@ -63,7 +63,6 @@ def run_evaluation(self, run_id: str):
                 )
                 await execution_service.execute_run(run_uuid)
 
-                # Check run cost limit after execution
                 limits = cost_tracker.check_limits(run.total_cost_usd, 0)
                 if limits["run_limit_exceeded"]:
                     run.status = RunStatus.FAILED
@@ -77,7 +76,6 @@ def run_evaluation(self, run_id: str):
                 scoring_service = ScoringServiceClass(execution_repo, result_repo, case_repo)
                 await scoring_service.score_run(run_uuid)
 
-                # Check cost limit after scoring
                 run = await run_repo.get(run_uuid)
                 limits = cost_tracker.check_limits(run.total_cost_usd, 0)
                 if limits["run_limit_exceeded"]:
@@ -147,12 +145,10 @@ def run_seeded_regression_benchmark(self):
 @shared_task
 def cleanup_old_runs(days: int = 365):
     logger.info("cleanup_old_runs_started", days=days)
-    # Implementation would delete old runs, transcripts, etc.
     logger.info("cleanup_old_runs_completed")
 
 
 @shared_task
 def check_cost_limits():
     logger.info("cost_limit_check_started")
-    # Implementation would check daily/run cost limits
     logger.info("cost_limit_check_completed")

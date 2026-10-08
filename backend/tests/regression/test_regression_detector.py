@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+﻿from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
@@ -60,7 +60,6 @@ class TestRegressionDetector:
     async def test_pass_to_fail_regression(self, detector, run_id, baseline_id, baseline):
         test_case_id = uuid4()
 
-        # Mock baseline
         detector.baseline_repo.get = AsyncMock(return_value=baseline)
         detector.baseline_item_repo.list_by_baseline = AsyncMock(return_value=[
             MagicMock(
@@ -70,7 +69,6 @@ class TestRegressionDetector:
             )
         ])
 
-        # Mock current results
         detector.result_repo.list_by_run = AsyncMock(return_value=[
             MagicMock(
                 test_case_id=test_case_id,
@@ -79,7 +77,6 @@ class TestRegressionDetector:
             )
         ])
 
-        # Mock regression creation
         detector.regression_repo.create = AsyncMock(return_value=MagicMock())
 
         findings = await detector.detect_regressions(run_id, baseline_id)

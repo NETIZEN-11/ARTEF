@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Plus, Loader2, AlertTriangle } from "lucide-react";
 
 interface TestSuite {
@@ -76,14 +76,13 @@ export default function NewRunPage() {
   };
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchData();
-      }
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/login");
+    } else {
+      fetchData();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [router]);
 
   useEffect(() => {
     if (formData.suite_id) {
@@ -123,7 +122,7 @@ export default function NewRunPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

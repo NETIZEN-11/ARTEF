@@ -17,14 +17,22 @@ logger = get_logger(__name__)
 
 
 def _build_case_response(c) -> "TestCaseResponse":
+    eb = getattr(c, "expected_behavior", None)
+    if eb is None:
+        eb_type = getattr(c, "expected_behavior_type", None)
+        eb = {
+            "type": eb_type.value if hasattr(eb_type, "value") else eb_type,
+            "matcher_config": getattr(c, "matcher_config", None),
+            "rubric_config": getattr(c, "rubric_config", None),
+        }
     return TestCaseResponse(
         id=c.id,
         test_case_id=c.test_case_id,
         category=c.category,
         severity=c.severity,
         input=c.input,
-        expected_behavior=c.expected_behavior or {},
-        metadata=c.test_case_metadata or {},
+        expected_behavior=eb or {},
+        metadata=getattr(c, "test_case_metadata", None) or {},
         is_active=c.is_active,
     )
 

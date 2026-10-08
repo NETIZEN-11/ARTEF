@@ -1,4 +1,4 @@
-"""initial_schema
+﻿"""initial_schema
 
 Revision ID: 001
 Revises: 
@@ -11,7 +11,6 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-# revision identifiers, used by Alembic.
 revision: str = "001"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
@@ -19,7 +18,6 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    # Create users table
     op.create_table(
         "users",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -38,7 +36,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_users_email_active", "users", ["email", "is_active"])
 
-    # Create roles table
     op.create_table(
         "roles",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -51,7 +48,6 @@ def upgrade() -> None:
         sa.UniqueConstraint("name"),
     )
 
-    # Create permissions table
     op.create_table(
         "permissions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -66,7 +62,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_permissions_resource", "permissions", ["resource"])
 
-    # Create user_roles association table
     op.create_table(
         "user_roles",
         sa.Column("user_id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -76,7 +71,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("user_id", "role_id"),
     )
 
-    # Create role_permissions association table
     op.create_table(
         "role_permissions",
         sa.Column("role_id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -86,7 +80,6 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("role_id", "permission_id"),
     )
 
-    # Create target_agents table
     op.create_table(
         "target_agents",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -108,7 +101,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_target_agents_status", "target_agents", ["status"])
 
-    # Create test_suites table
     op.create_table(
         "test_suites",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -126,7 +118,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_test_suites_name_version", "test_suites", ["name", "version"])
 
-    # Create test_suite_versions table
     op.create_table(
         "test_suite_versions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -143,7 +134,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_test_suite_versions_suite_id", "test_suite_versions", ["suite_id"])
 
-    # Create test_cases table
     op.create_table(
         "test_cases",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -168,7 +158,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_test_cases_suite_category", "test_cases", ["suite_id", "category"])
 
-    # Create test_case_versions table
     op.create_table(
         "test_case_versions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -185,7 +174,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_test_case_versions_test_case_id", "test_case_versions", ["test_case_id"])
 
-    # Create runs table (without baseline FK initially)
     op.create_table(
         "runs",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -223,7 +211,6 @@ def upgrade() -> None:
     op.create_index("ix_runs_status_created", "runs", ["status", "created_at"])
     op.create_index("ix_runs_agent_suite", "runs", ["target_agent_id", "suite_id"])
 
-    # Create executions table
     op.create_table(
         "executions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -246,7 +233,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_executions_run_status", "executions", ["run_id", "status"])
 
-    # Create results table
     op.create_table(
         "results",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -274,7 +260,6 @@ def upgrade() -> None:
     op.create_index("ix_results_run_verdict", "results", ["run_id", "verdict"])
     op.create_index("ix_results_test_case_verdict", "results", ["test_case_id", "verdict"])
 
-    # Create baselines table
     op.create_table(
         "baselines",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -298,7 +283,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_baselines_suite_active", "baselines", ["suite_id", "is_active"])
 
-    # Create baseline_items table
     op.create_table(
         "baseline_items",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -314,7 +298,6 @@ def upgrade() -> None:
     )
     op.create_index("ix_baseline_items_baseline_id", "baseline_items", ["baseline_id"])
 
-    # Add baseline FK constraint to runs table now that baselines exists
     op.create_foreign_key(
         "fk_runs_baseline_id",
         "runs",
@@ -324,7 +307,6 @@ def upgrade() -> None:
         ondelete="SET NULL"
     )
 
-    # Create regressions table
     op.create_table(
         "regressions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -349,7 +331,6 @@ def upgrade() -> None:
     op.create_index("ix_regressions_run_id", "regressions", ["run_id"])
     op.create_index("ix_regressions_severity", "regressions", ["severity"])
 
-    # Create review_queue table
     op.create_table(
         "review_queue",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -375,7 +356,6 @@ def upgrade() -> None:
     op.create_index("ix_review_queue_status", "review_queue", ["status"])
     op.create_index("ix_review_queue_severity", "review_queue", ["severity"])
 
-    # Create audit_logs table
     op.create_table(
         "audit_logs",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -393,7 +373,6 @@ def upgrade() -> None:
     op.create_index("ix_audit_logs_user_created", "audit_logs", ["user_id", "created_at"])
     op.create_index("ix_audit_logs_action", "audit_logs", ["action"])
 
-    # Create model_configs table
     op.create_table(
         "model_configs",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -409,7 +388,6 @@ def upgrade() -> None:
         sa.UniqueConstraint("provider", "model", name="uq_model_config_provider_model"),
     )
 
-    # Create prompt_versions table
     op.create_table(
         "prompt_versions",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -427,7 +405,6 @@ def upgrade() -> None:
         sa.UniqueConstraint("name", "version", name="uq_prompt_version_name_version"),
     )
 
-    # Create feature_flags table
     op.create_table(
         "feature_flags",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
@@ -444,7 +421,6 @@ def upgrade() -> None:
         sa.UniqueConstraint("name"),
     )
 
-    # Create attack_taxonomy table
     op.create_table(
         "attack_taxonomy",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),

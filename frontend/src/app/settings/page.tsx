@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { User, Shield, Key, Database, Server, Bell, Save, Loader2, Badge as BadgeIcon, Edit, Trash2, Plus } from "lucide-react";
 
 interface UserInfo {
@@ -54,6 +55,7 @@ interface AuditLog {
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuth();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
@@ -93,16 +95,21 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchUserInfo();
-        fetchFeatureFlags();
-        fetchAuditLogs();
-      }
+    const token = getAccessToken();
+    if (token) {
+      fetchUserInfo();
+      fetchFeatureFlags();
+      fetchAuditLogs();
+      return;
     }
-  }, [isAuthenticated, isLoading, fetchUserInfo, fetchFeatureFlags, fetchAuditLogs]);
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    } else if (!isLoading && isAuthenticated) {
+      fetchUserInfo();
+      fetchFeatureFlags();
+      fetchAuditLogs();
+    }
+  }, [isAuthenticated, isLoading, fetchUserInfo, fetchFeatureFlags, fetchAuditLogs, router]);
 
   const handleUpdateProfile = async (data: Partial<UserInfo>) => {
     setSaving(true);
@@ -155,7 +162,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
@@ -339,7 +346,7 @@ export default function SettingsPage() {
                       <p className="font-medium">Allowed Hosts</p>
                       <p className="text-sm text-muted-foreground">Comma-separated list of allowed hosts</p>
                     </div>
-                    <Input placeholder="example.com, api.example.com" className="w-64" />
+                    <Input placeholder="allowed-host.example, api.internal" className="w-64" />
                   </div>
                 </div>
                 <div>

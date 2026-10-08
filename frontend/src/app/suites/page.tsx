@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Plus, Upload, Search, FileText, Eye, Edit, Trash2, Download, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface TestCase {
@@ -41,6 +42,7 @@ interface TestSuite {
 }
 
 export default function SuitesPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [suites, setSuites] = useState<TestSuite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,16 +78,18 @@ export default function SuitesPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchSuites();
-      }
+    const token = getAccessToken();
+    if (token) {
+      fetchSuites();
+      return;
     }
-  }, [isAuthenticated, isLoading, fetchSuites]);
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/login");
+    } else if (!isLoading && isAuthenticated) {
+      fetchSuites();
+    }
+  }, [isAuthenticated, isLoading, fetchSuites, router]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isAuthenticated || loading) return;
     
@@ -147,7 +151,7 @@ export default function SuitesPage() {
 
   const categories = Array.from(new Set(suites.flatMap(s => s.test_cases.map(tc => tc.category))));
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

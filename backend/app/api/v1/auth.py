@@ -1,4 +1,5 @@
-from datetime import UTC, datetime
+﻿from datetime import UTC, datetime
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -104,14 +105,12 @@ async def refresh_token(
     except Exception:
         raise AuthenticationError("Invalid refresh token")
 
-    # SECURITY: Verify user still exists and is active
     user = await user_repo.get(UUID(token_data.sub))
     if not user:
         raise AuthenticationError("User not found")
     if not user.is_active:
         raise AuthenticationError("User account is disabled")
 
-    # Get fresh roles from database
     roles = [role.name for role in user.roles]
     scopes = get_scopes_for_roles(roles)
 
@@ -152,12 +151,8 @@ async def register(
 
     settings = get_settings()
 
-    # SECURITY: In production, strictly control registration
     if settings.is_production:
-        # Check if open registration is explicitly allowed via feature flag
-        # Note: FEATURE_EXPERIMENTAL_UI should NOT control security features
         if not getattr(settings, "ALLOW_OPEN_REGISTRATION", False):
-            # Allow registration only if no users exist (bootstrap scenario)
             all_users = await user_repo.list(skip=0, limit=1)
             if len(all_users) > 0:
                 raise HTTPException(
@@ -165,7 +160,6 @@ async def register(
                     detail="Registration is disabled in production. Contact your administrator for an invitation.",
                 )
 
-    # Password strength validation - comprehensive checks
     if len(request.password) < 12:
         raise HTTPException(status_code=400, detail="Password must be at least 12 characters")
     if request.password.lower() == request.password or request.password.upper() == request.password:
@@ -175,13 +169,11 @@ async def register(
     if not any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in request.password):
         raise HTTPException(status_code=400, detail="Password must contain at least one special character")
 
-    # Check for username/email in password
     if request.username.lower() in request.password.lower():
         raise HTTPException(status_code=400, detail="Password must not contain username")
     if request.email.split("@")[0].lower() in request.password.lower():
         raise HTTPException(status_code=400, detail="Password must not contain email")
 
-    # Check for common weak passwords
     COMMON_WEAK_PASSWORDS = {
         "password123", "password12", "qwerty123", "admin123", "welcome123",
         "changeme123", "letmein123", "monkey123", "dragon123", "master123"

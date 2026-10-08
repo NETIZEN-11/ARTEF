@@ -17,39 +17,50 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  DEPLOY_IMAGE_TAG: ${{ github.event.inputs.version || github.sha }}
 
 jobs:
+  validate-inputs:
+    name: Validate deployment inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm required deployment config exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${{ github.event.inputs.environment }}" || { echo "Missing environment input"; exit 1; }
+          test -n "${{ github.event.inputs.version }}" || { echo "Missing version input"; exit 1; }
+          echo "Deploying ${{ github.event.inputs.environment }} @ ${{ github.event.inputs.version }}"
+
   build-and-push:
     name: Build and Push Images
+    needs: validate-inputs
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Extract metadata for Backend
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ github.event.inputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
@@ -61,19 +72,16 @@ jobs:
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
+
       - name: Extract metadata for Frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ github.event.inputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
@@ -84,19 +92,16 @@ jobs:
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
+
       - name: Extract metadata for Worker
         id: meta-worker
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-worker
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ github.event.inputs.version }}
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
       - name: Build and push Worker
         uses: docker/build-push-action@v5
         with:
@@ -109,6 +114,27 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Smoke test built backend image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --rm --name artef-backend-smoke -p 8000:8000 \
+            -e SECRET_KEY=test-secret-key-1234567890 \
+            -e DATABASE_URL=sqlite:///tmp/artef-smoke.db \
+            -e REDIS_URL=redis://host.docker.internal:6379/0 \
+            -e CELERY_BROKER_URL=redis://host.docker.internal:6379/1 \
+            -e CELERY_RESULT_BACKEND=redis://host.docker.internal:6379/2 \
+            -e CHROMA_HOST=host.docker.internal \
+            -e CHROMA_PORT=8000 \
+            -e S3_ENDPOINT_URL=http://host.docker.internal:9000 \
+            -e S3_ACCESS_KEY=test \
+            -e S3_SECRET_KEY=test \
+            -e S3_BUCKET=test-bucket \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.event.inputs.version }}
+          sleep 20
+          curl -fsS http://127.0.0.1:8000/api/v1/health
+          docker stop artef-backend-smoke
+
   deploy-staging:
     name: Deploy to Staging
     needs: build-and-push
@@ -117,20 +143,24 @@ jobs:
     environment: staging
     steps:
       - name: Deploy to Staging
+        shell: bash
         run: |
-          echo "Deploying to staging environment..."
-          # kubectl set image deployment/backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.event.inputs.version }}
-          # kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.event.inputs.version }}
-          # kubectl set image deployment/worker worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-worker:${{ github.event.inputs.version }}
-          # kubectl rollout status deployment/backend -n staging
-          # kubectl rollout status deployment/frontend -n staging
-          # kubectl rollout status deployment/worker -n staging
-      
+          set -euo pipefail
+          echo "Deploying backend/frontend/worker image tags ${{ github.event.inputs.version }} to staging"
+          echo "kubectl set image deployment/backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.event.inputs.version }}"
+          echo "kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.event.inputs.version }}"
+          echo "kubectl set image deployment/worker worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-worker:${{ github.event.inputs.version }}"
+
       - name: Run staging smoke tests
+        shell: bash
         run: |
-          echo "Running staging smoke tests..."
-          # curl -f https://staging.redteam.example.com/health
-          # curl -f https://staging.redteam.example.com/api/v1/health
+          set -euo pipefail
+          STAGING_BASE_URL="${{ vars.STAGING_BASE_URL }}"
+          if [ -z "$STAGING_BASE_URL" ]; then
+            echo "STAGING_BASE_URL is not configured; skipping smoke test."
+            exit 0
+          fi
+          curl -fsS "$STAGING_BASE_URL/api/v1/health"
 
   deploy-production:
     name: Deploy to Production
@@ -140,27 +170,32 @@ jobs:
     environment: production
     steps:
       - name: Deploy to Production (Canary)
+        shell: bash
         run: |
+          set -euo pipefail
           echo "Deploying to production with canary strategy..."
-          # kubectl set image deployment/backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.event.inputs.version }}
-          # kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.event.inputs.version }}
-          # kubectl set image deployment/worker worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-worker:${{ github.event.inputs.version }}
-          # kubectl rollout status deployment/backend -n production --timeout=10m
-      
+          echo "kubectl set image deployment/backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.event.inputs.version }}"
+          echo "kubectl set image deployment/frontend frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ github.event.inputs.version }}"
+          echo "kubectl set image deployment/worker worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-worker:${{ github.event.inputs.version }}"
+
       - name: Run production smoke tests
+        shell: bash
         run: |
-          echo "Running production smoke tests..."
-          # curl -f https://redteam.example.com/health
-      
-      - name: Monitor for 10 minutes
-        run: |
-          echo "Monitoring deployment for 10 minutes..."
-          sleep 600
-      
+          set -euo pipefail
+          PRODUCTION_BASE_URL="${{ vars.PRODUCTION_BASE_URL }}"
+          if [ -z "$PRODUCTION_BASE_URL" ]; then
+            echo "PRODUCTION_BASE_URL is not configured; skipping smoke test."
+            exit 0
+          fi
+          curl -fsS "$PRODUCTION_BASE_URL/api/v1/health"
+          curl -fsS "$PRODUCTION_BASE_URL/"
+
       - name: Promote canary or rollback
+        shell: bash
         run: |
+          set -euo pipefail
           echo "Promoting canary to 100% or rolling back based on metrics"
-          # Based on error rates, latency, and business metrics
+          echo "Monitor error rate, latency, and business metrics before full promotion."
 
   notify:
     name: Notify Deployment Status
@@ -169,7 +204,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send notification
+        shell: bash
         run: |
+          set -euo pipefail
           STATUS="${{ needs.deploy-staging.result }}${needs.deploy-production.result}"
           echo "Deployment completed with status: $STATUS"
-          # Send Slack/email notification
+          echo "Ready for Slack/email notification integration."

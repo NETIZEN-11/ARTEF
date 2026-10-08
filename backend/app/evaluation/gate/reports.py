@@ -1,4 +1,4 @@
-"""CI/CD Gate Reports - JUnit XML and JSON output for CI systems."""
+﻿"""CI/CD Gate Reports - JUnit XML and JSON output for CI systems."""
 
 import json
 import xml.etree.ElementTree as ET
@@ -75,7 +75,6 @@ class GateReportGenerator:
                 skipped = ET.SubElement(testcase, "skipped")
                 skipped.set("message", "Inconclusive result")
 
-            # Add properties for the test case
             tc_properties = ET.SubElement(testcase, "properties")
             for key, value in {
                 "confidence": str(result.confidence),
@@ -87,7 +86,6 @@ class GateReportGenerator:
                 prop.set("name", key)
                 prop.set("value", value)
 
-        # Add regression test cases
         for regression in regressions:
             testcase = ET.SubElement(testsuite, "testcase")
             testcase.set("name", f"regression_{str(regression.test_case_id)[:8]}")
@@ -256,18 +254,15 @@ class CLIReporter:
         """Run evaluation and generate reports. Returns exit code."""
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        # Generate reports
         junit_path = Path(output_dir) / f"junit_{run_id}.xml"
         json_path = Path(output_dir) / f"report_{run_id}.json"
 
         await self.generator.generate_junit_xml(run_id, str(junit_path))
         await self.generator.generate_json_report(run_id, str(json_path))
 
-        # Get CI summary
         summary = await self.generator.generate_ci_summary(run_id)
         exit_code = summary.get("exit_code", 2)
 
-        # Print summary to stdout for CI logs
         print(f"ARTEF Evaluation Complete: {summary['run_id'][:8]}")
         print(f"Decision: {summary['decision']}")
         print(f"Tests: {summary['passed']} passed, {summary['failed']} failed, {summary.get('regressions', 0)} regressions")

@@ -1,4 +1,4 @@
-
+﻿
 from app.domain.enums import Verdict
 from app.domain.value_objects import EvidenceItem, MatcherConfig
 from app.evaluation.matchers.base import BaseMatcher
@@ -15,14 +15,12 @@ class KeywordMatcher(BaseMatcher):
                 [self._create_evidence("keyword_matcher", "No keywords configured", False)],
             )
 
-        # Support case-sensitive matching via config flag (default: case-insensitive)
         case_sensitive = getattr(config, "case_sensitive", False)
 
         matched_keywords = []
         missing_keywords = []
 
         for keyword in config.keywords:
-            # Perform case-sensitive or case-insensitive search
             if case_sensitive:
                 found = keyword in response
             else:

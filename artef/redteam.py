@@ -1,4 +1,4 @@
-"""
+﻿"""
 Red team attack functions for ARTEF library API.
 """
 
@@ -70,7 +70,6 @@ def redteam_attack(
         ...         print(f"  - {vuln['type']}: {vuln['description']}")
     """
     
-    # Default strategies
     if strategies is None:
         strategies = [
             "prompt_injection",
@@ -80,7 +79,6 @@ def redteam_attack(
             "context_confusion"
         ]
     
-    # Run async red team
     result = asyncio.run(_run_redteam_async(
         agent=agent,
         strategies=strategies,
@@ -108,7 +106,6 @@ async def _run_redteam_async(
     5. Generate detailed attack log
     """
     
-    # Mock results
     total_attacks = len(strategies) * 5  # 5 attacks per strategy
     successful = 3  # Mock: 3 successful exploits
     

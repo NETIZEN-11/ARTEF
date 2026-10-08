@@ -1,4 +1,4 @@
-export interface UUID {
+﻿export interface UUID {
   value: string;
 }
 
@@ -434,7 +434,6 @@ export interface CostSummary {
   period_end: string;
 }
 
-// Matrix types
 export interface MatrixConfig {
   name: string;
   description?: string;
@@ -490,7 +489,6 @@ export interface MatrixExecutionSummary {
   cells: any[];
 }
 
-// Dataset types
 export interface Dataset {
   id: string;
   name: string;
@@ -528,7 +526,6 @@ export interface DatasetSplit {
   created_at: string;
 }
 
-// Pipeline types
 export interface PipelineConfig {
   name: string;
   description?: string;
@@ -599,7 +596,6 @@ export type PipelineStatus =
   | "aggregating" | "comparing_baseline" | "classifying_severity" | "evaluating_gate" 
   | "awaiting_review" | "completed" | "failed" | "cancelled";
 
-// Dataset types
 export interface Dataset {
   id: string;
   name: string;

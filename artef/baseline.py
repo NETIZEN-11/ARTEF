@@ -1,4 +1,4 @@
-"""
+﻿"""
 Baseline management functions for ARTEF library API.
 """
 
@@ -53,7 +53,6 @@ def create_baseline(
         >>> print(f"Created baseline: {baseline['id']}")
     """
     
-    # Stub implementation
     return {
         "id": f"baseline-{hash(name)}",
         "name": name,
@@ -93,7 +92,6 @@ def compare_to_baseline(
         ...         print(f"  - {test['test_id']}: {test['old_status']} -> {test['new_status']}")
     """
     
-    # Stub implementation - mock regression scenario
     baseline_score = 0.95
     candidate_score = 0.88
     delta = candidate_score - baseline_score

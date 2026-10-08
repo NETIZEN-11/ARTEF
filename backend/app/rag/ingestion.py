@@ -1,4 +1,4 @@
-from typing import Any
+﻿from typing import Any
 
 from app.core.logging import get_logger
 from app.rag.vector_store import VectorStore
@@ -49,7 +49,6 @@ class IngestionPipeline:
             )
 
         if texts:
-            # Chunk long texts to avoid embedding truncation (8191 token limit)
             chunked_texts = []
             chunked_metas = []
             for text, meta in zip(texts, metadatas):
@@ -76,7 +75,6 @@ class IngestionPipeline:
         if metadata:
             meta.update(metadata)
 
-        # Chunk if needed
         chunks = self._chunk_text(content)
         for idx, chunk in enumerate(chunks):
             chunk_meta = {**meta, "chunk_index": idx, "total_chunks": len(chunks)}

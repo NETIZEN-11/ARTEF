@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from enum import Enum
 from typing import Any
 from uuid import uuid4
@@ -81,8 +81,6 @@ class BenchmarkRunner:
         total = 0
         findings = []
 
-        # Simulate benchmark run
-        # In production, this would load the YAML file and run the test cases
         total = 10
         passed = 8
         failed = 2

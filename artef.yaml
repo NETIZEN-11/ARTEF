@@ -1,8 +1,5 @@
-# ARTEF - Promptfoo-compatible Configuration
-# Usage: artef eval --config artef.yaml
-# Mirrors promptfoo's promptfooconfig.yaml structure
-
-description: "Agent Red-Teaming & Evaluation — promptfoo parity"
+﻿
+description: "Agent Red-Teaming & Evaluation â€” promptfoo parity"
 
 providers:
   - id: openai:gpt-4o

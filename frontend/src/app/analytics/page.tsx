@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { formatDate, formatDuration, formatCost } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import {
   BarChart,
   Bar,
@@ -56,6 +57,7 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,16 +86,12 @@ export default function AnalyticsPage() {
   }, [timeRange]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchAnalytics();
-      }
-    }
-  }, [isAuthenticated, isLoading, fetchAnalytics]);
+    const token = getAccessToken();
+    if (token) { fetchAnalytics(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchAnalytics();
+  }, [isAuthenticated, isLoading, fetchAnalytics, router]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isAuthenticated || loading) return;
     
@@ -104,7 +102,7 @@ export default function AnalyticsPage() {
     return () => clearInterval(interval);
   }, [isAuthenticated, loading, fetchAnalytics]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
@@ -247,7 +245,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={runsData.length > 0 ? runsData : [{ name: "Day 1", value: 0 }]}>
+                      <AreaChart data={runsData}>
                         <defs>
                           <linearGradient id="colorRuns" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -270,7 +268,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={passRateData.length > 0 ? passRateData : [{ name: "Day 1", value: 0 }]}>
+                      <LineChart data={passRateData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" className="text-xs" />
                         <YAxis className="text-xs" domain={[0, 100]} />
@@ -287,7 +285,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={regressionData.length > 0 ? regressionData : [{ name: "Day 1", value: 0 }]}>
+                      <BarChart data={regressionData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" className="text-xs" />
                         <YAxis className="text-xs" />
@@ -304,7 +302,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={costData.length > 0 ? costData : [{ name: "Day 1", value: 0 }]}>
+                      <LineChart data={costData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" className="text-xs" />
                         <YAxis className="text-xs" />
@@ -388,7 +386,7 @@ export default function AnalyticsPage() {
                       <LineChart data={analytics?.latency_over_time?.map(d => ({
                         name: new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
                         value: d.latency,
-                      })) || [{ name: "Day 1", value: 0 }]}>
+                      })) || []}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" className="text-xs" />
                         <YAxis className="text-xs" />
@@ -405,7 +403,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={runsData.length > 0 ? runsData : [{ name: "Day 1", value: 0 }]}>
+                      <BarChart data={runsData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" className="text-xs" />
                         <YAxis className="text-xs" />

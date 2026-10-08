@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -39,8 +39,13 @@ import {
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState(ATTACK_SCENARIOS[0]);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLaunch = () => {
     router.push(isAuthenticated ? "/dashboard" : "/login");
@@ -92,7 +97,7 @@ export default function LandingPage() {
             onClick={handleLaunch}
             className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-300/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <span>{isAuthenticated ? "Dashboard" : "Enter Console"}</span>
+            <span suppressHydrationWarning>{mounted && isAuthenticated ? "Dashboard" : "Enter Console"}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

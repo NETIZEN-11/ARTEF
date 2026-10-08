@@ -1,4 +1,4 @@
-import difflib
+﻿import difflib
 from datetime import datetime
 from uuid import UUID
 
@@ -162,7 +162,6 @@ async def diff_prompts(
     if not prompt_b:
         raise NotFoundError("PromptVersion", f"{request.prompt_type}/{request.version_b}")
 
-    # Compute diff
     diff = list(difflib.unified_diff(
         prompt_a.content.splitlines(keepends=True),
         prompt_b.content.splitlines(keepends=True),

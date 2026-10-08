@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
@@ -64,15 +64,11 @@ class EvidenceItem(BaseModel):
     """Structured evidence item for reproducibility and traceability."""
     source: str
     text: str
-    # Traceability fields
     trace_id: str | None = None
     span_id: str | None = None
-    # Metadata
     metadata: dict[str, Any] = {}
-    # Provenance
     collected_at: datetime = Field(default_factory=datetime.utcnow)
     collected_by: str | None = None  # component that collected this evidence
-    # Integrity
     content_hash: str | None = None  # SHA256 of text for integrity verification
 
 
@@ -93,7 +89,6 @@ class JudgeOutput(BaseModel):
     @field_validator("evidence")
     @classmethod
     def validate_evidence_not_empty(cls, v: list[EvidenceItem], info) -> list[EvidenceItem]:
-        # Only require evidence for PASS/FAIL verdicts, not INCONCLUSIVE
         verdict = info.data.get("verdict")
         if verdict in (Verdict.PASS, Verdict.FAIL) and not v:
             raise ValueError(f"Evidence list cannot be empty for {verdict} verdict")
@@ -171,27 +166,22 @@ class EvidencePackage(BaseModel):
     trace_id: str
     span_id: str
 
-    # Input/Output
     test_input: str
     expected_behavior: str
     actual_response: str
 
-    # Evidence
     assertion_evidence: list[EvidenceItem] = []
     judge_evidence: list[EvidenceItem] = []
     redteam_evidence: list[EvidenceItem] = []
 
-    # Results
     assertion_result: dict[str, Any] | None = None
     judge_result: dict[str, Any] | None = None
     redteam_result: dict[str, Any] | None = None
 
-    # Final verdict
     final_verdict: str
     final_confidence: float
     final_severity: str | None = None
 
-    # Metadata
     execution_time_ms: int
     tokens_used: int
     estimated_cost: float
@@ -200,14 +190,11 @@ class EvidencePackage(BaseModel):
     prompt_version: str | None = None
     dataset_version: str | None = None
 
-    # Timestamps
     started_at: datetime
     completed_at: datetime
 
-    # Integrity
     package_hash: str | None = None  # SHA256 of the entire package for integrity
 
-    # Reproducibility
     config_snapshot: dict[str, Any] = {}
     reproducibility_verified: bool = False
     reproducibility_check_at: datetime | None = None

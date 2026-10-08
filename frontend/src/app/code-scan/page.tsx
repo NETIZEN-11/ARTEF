@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Shield, Bug, AlertTriangle, CheckCircle, Clock, FileSearch, Code2, Loader2 } from "lucide-react";
 
 export default function CodeScanPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [findings, setFindings] = useState<any[]>([]);
   const [summary, setSummary] = useState({ critical: 0, high: 0, medium: 0, low: 0 });
@@ -47,13 +49,13 @@ export default function CodeScanPage() {
   };
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) window.location.href = "/login";
-      else fetchFindings();
-    }
-  }, [isAuthenticated, isLoading, fetchFindings]);
+    const token = getAccessToken();
+    if (token) { fetchFindings(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchFindings();
+  }, [isAuthenticated, isLoading, fetchFindings, router]);
 
-  if (isLoading || !isAuthenticated) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
+  if (isLoading && !getAccessToken()) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -61,7 +63,7 @@ export default function CodeScanPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2"><Code2 className="h-8 w-8 text-primary" />Code Scanning</h1>
-            <p className="text-muted-foreground">Find LLM vulnerabilities in your IDE and CI/CD — promptfoo style</p>
+            <p className="text-muted-foreground">Find LLM and prompt vulnerabilities across source repositories &amp; CI/CD</p>
           </div>
           <Button onClick={runScan} disabled={scanning}>{scanning ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Scanning...</> : <><FileSearch className="mr-2 h-4 w-4" />Run Scan</>}</Button>
         </div>
@@ -76,8 +78,8 @@ export default function CodeScanPage() {
         <Card>
           <CardHeader><CardTitle>CLI Usage</CardTitle></CardHeader>
           <CardContent>
-            <pre className="bg-muted p-4 rounded text-sm overflow-auto">{`# Install & run locally (like promptfoo)
-pip install artef
+            <pre className="bg-muted p-4 rounded text-sm overflow-auto">{`# Install & run locally
+pip install -e backend/
 artef security scan-model ./my-model
 artef code-scan --path ./src
 

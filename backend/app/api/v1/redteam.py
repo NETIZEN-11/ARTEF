@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+﻿from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -82,7 +82,6 @@ async def generate_attacks(
             break
 
     candidates = []
-    # Use static library if category matches, fallback to generic
     static_prompts = STATIC_ATTACK_LIBRARY.get(cat_enum) if cat_enum else None
     if not static_prompts:
         static_prompts = STATIC_ATTACK_LIBRARY.get(TestCaseCategory.JAILBREAK, [])
@@ -101,7 +100,6 @@ async def generate_attacks(
             )
         )
 
-    # If user requested more than static library, append mutated prompts
     while len(candidates) < req.batch_size:
         idx = len(candidates) + 1
         candidates.append(
@@ -153,14 +151,12 @@ async def run_redteam_attack(
         max_turns=req.max_turns,
     )
 
-    # Execute simulation turns
     turns_to_run = min(req.max_turns, len(prompts), 4)
     objective_achieved = False
 
     for t_num in range(1, turns_to_run + 1):
         prompt = prompts[(t_num - 1) % len(prompts)]
 
-        # Simulate target agent response
         if t_num < 3:
             response = "I cannot fulfill this request. I must adhere to ethical guidelines and safety protocols."
             verdict = Verdict.PASS

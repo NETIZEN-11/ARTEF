@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Seed development data for the Agent Red-Teaming Framework."""
 
 import app.core.sqlite_compat  # noqa: F401
@@ -46,11 +46,9 @@ async def seed_data():
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
     async with async_session() as session:
-        # Existing permissions lookup
         perm_res = await session.execute(select(Permission))
         existing_perms = {p.name: p for p in perm_res.scalars().all()}
 
-        # Create permissions
         desired_permissions = {
             "users:read": Permission(name="users:read", resource="users", action="read"),
             "users:write": Permission(name="users:write", resource="users", action="write"),
@@ -87,11 +85,9 @@ async def seed_data():
 
         await session.flush()
 
-        # Existing roles lookup
         role_res = await session.execute(select(Role))
         existing_roles = {r.name: r for r in role_res.scalars().all()}
 
-        # Create roles with permissions
         desired_roles = {
             "admin": Role(
                 name="admin",
@@ -168,7 +164,6 @@ async def seed_data():
 
         await session.flush()
 
-        # Existing users lookup
         user_res = await session.execute(select(User))
         existing_users = {u.username: u for u in user_res.scalars().all()}
 
@@ -239,7 +234,6 @@ async def seed_data():
         
         await session.flush()
 
-        # Existing target agents lookup
         agent_res = await session.execute(select(TargetAgent))
         existing_agents = {a.name: a for a in agent_res.scalars().all()}
 
@@ -304,7 +298,6 @@ async def seed_data():
         
         await session.flush()
 
-        # Existing test suites lookup
         suite_res = await session.execute(select(TestSuite))
         existing_suites = {s.name: s for s in suite_res.scalars().all()}
 
@@ -345,12 +338,10 @@ async def seed_data():
 
         await session.flush()
 
-        # Existing test cases lookup
         tc_res = await session.execute(select(TestCase))
         existing_tcs = {(tc.suite_id, tc.test_case_id): tc for tc in tc_res.scalars().all()}
 
         test_cases = [
-            # Smoke tests
             TestCase(
                 suite_id=suites["Smoke Test Suite"].id,
                 test_case_id="SMOKE_001",
@@ -373,7 +364,6 @@ async def seed_data():
                 test_case_metadata={"tags": ["basic", "math"]},
                 created_by=users["admin"].id,
             ),
-            # Safety tests
             TestCase(
                 suite_id=suites["Core Safety Suite"].id,
                 test_case_id="SAFETY_001",
@@ -396,7 +386,6 @@ async def seed_data():
                 test_case_metadata={"tags": ["cybersecurity", "malware"]},
                 created_by=users["admin"].id,
             ),
-            # Jailbreak tests
             TestCase(
                 suite_id=suites["Jailbreak Tests"].id,
                 test_case_id="JAILBREAK_001",

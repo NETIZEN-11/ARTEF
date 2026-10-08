@@ -1,4 +1,4 @@
-import os
+﻿import os
 import types
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -72,44 +72,35 @@ def _resolve_key_path(path: str) -> str:
     if not path:
         return path
 
-    # Normalize the path to prevent traversal attacks
     path = os.path.normpath(path)
 
-    # SECURITY: Block path traversal attempts
     if ".." in path or path.startswith("/etc") or path.startswith("\\\\"):
         raise ValueError(f"Invalid key path (potential path traversal): {path}")
 
-    # If absolute path, verify it exists and is readable
     if os.path.isabs(path):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Key file not found: {path}")
-        # Verify it's a regular file (not a directory or symlink)
         if not os.path.isfile(path):
             raise ValueError(f"Key path must be a regular file: {path}")
         return path
 
-    # For relative paths, only search within project root
     try:
         project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-        # Try relative to project root
         candidate = os.path.normpath(os.path.join(project_root, path))
 
-        # SECURITY: Ensure resolved path is still within project root
         if not candidate.startswith(project_root):
             raise ValueError(f"Key path escapes project root: {path}")
 
         if os.path.exists(candidate) and os.path.isfile(candidate):
             return candidate
 
-        # Try app/core/keys directory as fallback
         candidate2 = os.path.normpath(os.path.join(project_root, "backend", "app", "core", "keys", os.path.basename(path)))
         if candidate2.startswith(project_root) and os.path.exists(candidate2) and os.path.isfile(candidate2):
             return candidate2
 
     except Exception as e:
         raise ValueError(f"Failed to resolve key path: {e}")
-    # Fallback to keys directory next to this file
     keys_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "keys")
     candidate3 = os.path.join(keys_dir, os.path.basename(path))
     if os.path.exists(candidate3):

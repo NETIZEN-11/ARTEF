@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getApiBaseUrl } from "@/lib/api";
 
 export default function TestApiPage() {
   const [config, setConfig] = useState<any>({});
@@ -38,8 +39,8 @@ export default function TestApiPage() {
         <h2 className="text-xl font-semibold mb-2">Direct Backend Test:</h2>
         <button
           onClick={() => {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-            const healthUrl = `${apiUrl.replace('/api/v1', '')}/api/v1/health`;
+            const apiUrl = getApiBaseUrl();
+            const healthUrl = `${apiUrl.replace(/\/api\/v1$/, "")}/api/v1/health`;
             fetch(healthUrl)
               .then((res) => res.json())
               .then((data) => alert("Direct backend works: " + JSON.stringify(data)))

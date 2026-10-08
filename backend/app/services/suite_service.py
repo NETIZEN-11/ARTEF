@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from uuid import UUID
 
 import jsonschema
@@ -232,13 +232,11 @@ class SuiteService:
         return test_case
 
     async def import_yaml(self, yaml_content: str, user_id: UUID) -> TestSuite:
-        # SECURITY: Prevent DOS via oversized files
         MAX_YAML_SIZE = 5 * 1024 * 1024  # 5MB
         if len(yaml_content) > MAX_YAML_SIZE:
             raise ValidationError(f"YAML file too large (max {MAX_YAML_SIZE / 1024 / 1024}MB)")
 
         try:
-            # Use safe_load with resource limits
             data = yaml.safe_load(yaml_content)
         except yaml.YAMLError as e:
             raise ValidationError(f"Invalid YAML: {e}")
@@ -247,7 +245,6 @@ class SuiteService:
     async def import_json(self, json_content: str, user_id: UUID) -> TestSuite:
         import json
 
-        # SECURITY: Prevent DOS via oversized files
         MAX_JSON_SIZE = 5 * 1024 * 1024  # 5MB
         if len(json_content) > MAX_JSON_SIZE:
             raise ValidationError(f"JSON file too large (max {MAX_JSON_SIZE / 1024 / 1024}MB)")

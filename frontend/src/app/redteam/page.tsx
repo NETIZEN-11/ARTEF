@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Plus, Loader2, Download, Shield, Zap, FileText, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface AttackCandidate {
@@ -46,6 +47,7 @@ interface TargetAgent {
 }
 
 export default function RedTeamPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [agents, setAgents] = useState<TargetAgent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,17 +100,15 @@ export default function RedTeamPage() {
   };
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchData();
-        fetchAttackHistory();
-      }
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/login");
+    } else {
+      fetchData();
+      fetchAttackHistory();
     }
-  }, [isAuthenticated, isLoading]);
+  }, [router]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isAuthenticated || loading) return;
     
@@ -174,7 +174,7 @@ export default function RedTeamPage() {
     { value: "privilege_escalation", label: "Privilege Escalation" },
   ];
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

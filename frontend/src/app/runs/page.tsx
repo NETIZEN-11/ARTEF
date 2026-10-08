@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/api";
 import { formatDate, formatCost, getStatusColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Plus, Filter, Download, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface RunSummary {
@@ -79,16 +79,14 @@ export default function RunsPage() {
   }, [page, filters]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push("/login");
-      } else {
-        fetchRuns();
-      }
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/login");
+    } else {
+      fetchRuns();
     }
-  }, [isAuthenticated, isLoading, router, fetchRuns]);
+  }, [router, fetchRuns]);
 
-  // Auto-refresh every 30 seconds
   useEffect(() => {
     if (!isAuthenticated || loading) return;
     
@@ -99,7 +97,7 @@ export default function RunsPage() {
     return () => clearInterval(interval);
   }, [isAuthenticated, loading, fetchRuns]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <DashboardLayout>
         <div className="flex h-[calc(100vh-4rem)] items-center justify-center">

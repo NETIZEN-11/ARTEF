@@ -1,10 +1,9 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Professional Blue/Slate Theme */
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -12,40 +11,32 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     
-    /* Primary: Professional Blue */
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
     
-    /* Secondary: Cool Slate */
     --secondary: 215 20% 65%;
     --secondary-foreground: 222 47% 11%;
     
-    /* Muted: Light Gray */
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
     
-    /* Accent: Vibrant Blue */
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
     
-    /* Destructive: Professional Red */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     
-    /* Borders & Inputs */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
     --radius: 0.5rem;
     
-    /* Custom Professional Colors */
     --success: 142 76% 36%;
     --warning: 38 92% 50%;
     --info: 199 89% 48%;
   }
 
   .dark {
-    /* Dark Mode: Professional Dark Slate */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 222 47% 11%;

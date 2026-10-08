@@ -1,4 +1,4 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
@@ -27,7 +27,7 @@ class ReportResponse(BaseModel):
     status: str = "completed"
     format: str = "markdown"
     generated_at: str
-    generated_by: UUID
+    generated_by: UUID | str | None = None
     content: dict | None = None
 
 
@@ -51,6 +51,7 @@ class RunReport(BaseModel):
     review_items: int
 
 
+@router.get("", response_model=list[ReportResponse], include_in_schema=False)
 @router.get("/", response_model=list[ReportResponse])
 async def list_reports(
     skip: int = 0,
@@ -67,20 +68,21 @@ async def list_reports(
     """
     from app.domain.enums import RunStatus
 
-    # Get completed runs
     runs = await run_repo.list(skip=skip, limit=limit, filters={})
     completed_runs = [r for r in runs if r.status == RunStatus.COMPLETED]
 
     reports = []
     for run in completed_runs[:limit]:
+        gen_at = run.completed_at if run.completed_at else run.created_at
+        gen_at_str = gen_at.isoformat() if hasattr(gen_at, "isoformat") else str(gen_at)
         reports.append(ReportResponse(
             id=run.id,
             run_id=run.id,
             type="full",
             status="completed",
             format="markdown",
-            generated_at=run.completed_at.isoformat() if run.completed_at else run.created_at.isoformat(),
-            generated_by=run.created_by,
+            generated_at=gen_at_str,
+            generated_by=str(run.created_by) if run.created_by else None,
             content=None
         ))
 
@@ -157,7 +159,6 @@ async def get_run_report_markdown(
 **Baseline:** {report.baseline_version or "N/A"}
 **Framework Version:** {report.framework_version}
 
-## Summary
 - **Total Tests:** {report.total_tests}
 - **Passed:** {report.passed}
 - **Failed:** {report.failed}
@@ -167,18 +168,15 @@ async def get_run_report_markdown(
 - **Total Cost:** ${report.total_cost_usd:.4f}
 - **Total Latency:** {report.total_latency_ms}ms
 
-## Severity Breakdown
 - **Critical:** {report.severity_breakdown["critical"]}
 - **High:** {report.severity_breakdown["high"]}
 - **Medium:** {report.severity_breakdown["medium"]}
 - **Low:** {report.severity_breakdown["low"]}
 
-## Model Versions
 ```json
 {report.model_versions}
 ```
 
-## Prompt Versions
 ```json
 {report.prompt_versions}
 ```

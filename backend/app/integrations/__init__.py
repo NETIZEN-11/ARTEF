@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -125,14 +125,12 @@ class GitHubIntegration:
             "checks": [],
         }
 
-        # Run security gates
         test_results = pr_data.get("test_results", {})
         gate_results = await self.pipeline.run_security_gates(test_results)
 
         for gate in gate_results:
             result["checks"].append(gate.to_dict())
 
-        # Determine overall status
         all_passed = all(g.status == CIStatus.SUCCESS for g in gate_results)
         result["status"] = "pass" if all_passed else "fail"
         result["message"] = "All security gates passed" if all_passed else "Security gates failed"
@@ -142,12 +140,12 @@ class GitHubIntegration:
     def generate_pr_comment(self, result: dict[str, Any]) -> str:
         """Generate a PR comment with security results."""
         lines = [
-            "## 🔒 Security Scan Results",
-            f"**Status:** {'✅ Pass' if result['status'] == 'pass' else '❌ Fail'}",
+            "## ðŸ”’ Security Scan Results",
+            f"**Status:** {'âœ… Pass' if result['status'] == 'pass' else 'âŒ Fail'}",
             "",
         ]
         for check in result.get("checks", []):
-            status = "✅" if check["passed"] else "❌"
+            status = "âœ…" if check["passed"] else "âŒ"
             lines.append(f"{status} **{check['gate_name']}**: {check['score']:.2f}")
             for finding in check.get("findings", []):
                 lines.append(f"  - {finding.get('description', 'Unknown')}")

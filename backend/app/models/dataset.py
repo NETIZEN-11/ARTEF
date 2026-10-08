@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -42,21 +42,17 @@ class Dataset(Base):
         index=True,
     )
 
-    # Dataset configuration
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)  # file, database, api, synthetic
     source_config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     schema: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)  # column definitions
 
-    # Splitting
     split_config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)  # train/val/test ratios
     split_seed: Mapped[int] = mapped_column(Integer, default=42)
 
-    # Metadata
     total_records: Mapped[int] = mapped_column(Integer, default=0)
     total_size_bytes: Mapped[int] = mapped_column(Integer, default=0)
     checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)  # SHA256
 
-    # Versioning
     current_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -92,14 +88,11 @@ class DatasetVersion(Base):
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Snapshot
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)  # Full dataset snapshot
     changelog: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Split info
     split_sizes: Mapped[dict[str, int]] = mapped_column(JSON, default=dict, nullable=False)  # train/val/test counts
 
-    # Metadata
     total_records: Mapped[int] = mapped_column(Integer, default=0)
     checksum: Mapped[str] = mapped_column(String(64), nullable=False)
 
@@ -130,7 +123,6 @@ class DatasetSplit(Base):
     )
     split_name: Mapped[str] = mapped_column(String(50), nullable=False)  # train, val, test
 
-    # Split data reference
     records: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
     record_indices: Mapped[list[int]] = mapped_column(JSON, default=list, nullable=False)  # Original dataset indices
 

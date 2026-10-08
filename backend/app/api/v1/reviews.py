@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -82,6 +82,7 @@ class ReviewLabelResponse(BaseModel):
         from_attributes = True
 
 
+@router.get("", response_model=list[ReviewResponse], include_in_schema=False)
 @router.get("/", response_model=list[ReviewResponse])
 async def list_reviews(
     skip: int = 0,
@@ -120,7 +121,6 @@ async def get_review(
     if not review:
         raise NotFoundError("Review", str(review_id))
 
-    # Enrich with evidence and regression details
     evidence = review.evidence if review.evidence else []
     test_case_input = None
     test_case_expected = None
@@ -132,7 +132,6 @@ async def get_review(
         if regression:
             evidence.extend(regression.evidence or [])
 
-            # Get the result for more details
             result = await result_repo.get_by_run_and_test_case(review.run_id, regression.test_case_id)
             if result:
                 test_case_input = result.test_case.input if result.test_case else None

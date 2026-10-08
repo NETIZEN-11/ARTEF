@@ -1,4 +1,4 @@
-import copy
+﻿import copy
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
@@ -73,7 +73,6 @@ class ExecutionService:
         run.total_tests = len(test_cases)
         await self.run_repo.session.flush()
 
-        # Generate trace ID for this run
         run_trace_id = generate_trace_id()
 
         for test_case in test_cases:
@@ -89,7 +88,6 @@ class ExecutionService:
             try:
                 response = await self._call_target_agent(agent, test_case, run)
 
-                # Redact PII BEFORE setting on execution (GDPR compliance)
                 request_body = self._build_request(agent, test_case)
                 execution_data = {
                     "target_request": request_body,
@@ -106,10 +104,8 @@ class ExecutionService:
                 elapsed = execution.completed_at - execution.started_at
                 execution.latency_ms = int(elapsed.total_seconds() * 1000)
 
-                # Create execution record with already-redacted data
                 execution = await self.execution_repo.create(execution)
 
-                # Track cost for target agent call (estimate based on response size)
                 response_text = str(response.get("text", response.get("response", str(response))))
                 estimated_tokens = len(response_text) // 4  # rough estimate
                 if estimated_tokens > 0:
@@ -151,7 +147,6 @@ class ExecutionService:
     ) -> dict[str, Any]:
         timeout = httpx.Timeout(agent.timeout_seconds, connect=5.0)
 
-        # Get execution for this test case to get trace/span IDs
         execution = await self.execution_repo.get_by_run_and_test_case(run.id, test_case.id)
 
         headers = {
@@ -159,7 +154,6 @@ class ExecutionService:
             **agent.auth_config.get("headers", {}),
         }
 
-        # Add trace headers for distributed tracing
         if execution and execution.trace_id:
             headers["X-Trace-ID"] = execution.trace_id
         if execution and execution.span_id:

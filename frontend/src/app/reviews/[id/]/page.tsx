@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { formatDate, getSeverityColor } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Edit, AlertTriangle, CheckCircle, XCircle, AlertCircle, Flag } from "lucide-react";
 
@@ -69,14 +69,11 @@ export default function ReviewDetailPage() {
   }, [reviewId]);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        window.location.href = "/login";
-      } else {
-        fetchReview();
-      }
-    }
-  }, [isAuthenticated, isLoading, fetchReview]);
+    const token = getAccessToken();
+    if (token) { fetchReview(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchReview();
+  }, [isAuthenticated, isLoading, fetchReview, router]);
 
   const handleLabelReview = async (label: string) => {
     setSaving(true);
@@ -113,7 +110,7 @@ export default function ReviewDetailPage() {
     }
   };
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading && !getAccessToken()) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

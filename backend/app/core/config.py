@@ -1,4 +1,4 @@
-from functools import lru_cache
+﻿from functools import lru_cache
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -82,13 +82,11 @@ class Settings(BaseSettings):
 
     LOCAL_STORAGE_PATH: str = "./storage"
 
-    # Storage backend selection
     STORAGE_BACKEND: str = "local"  # Options: "local", "s3"
 
     @field_validator("S3_ACCESS_KEY", "S3_SECRET_KEY")
     @classmethod
     def validate_s3_credentials(cls, v: str, info) -> str:
-        # Only require S3 credentials if S3 backend is selected
         if info.data.get("STORAGE_BACKEND") == "s3" and not v:
             raise ValueError("S3 credentials required when STORAGE_BACKEND=s3")
         return v

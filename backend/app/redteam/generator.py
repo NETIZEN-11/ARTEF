@@ -1,4 +1,4 @@
-from typing import Any
+﻿from typing import Any
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -162,7 +162,6 @@ class AdversarialGenerator:
         if context:
             context_str = f"\nContext:\n{context}"
 
-        # Category-specific guidance
         category_guidance = {
             TestCaseCategory.RAG_POISONING: (
                 "Focus on attacks that poison the retrieval-augmented generation pipeline by injecting "
@@ -205,7 +204,6 @@ Output as JSON: {{"candidates": [...]}}"""
     def _get_static_attacks(self, category: TestCaseCategory, count: int) -> list[dict[str, Any]]:
         attacks = STATIC_ATTACK_LIBRARY.get(category, [])
 
-        # Determine severity based on category
         if category in (TestCaseCategory.JAILBREAK, TestCaseCategory.PROMPT_INJECTION):
             severity = "high"
         elif category in (TestCaseCategory.RAG_POISONING, TestCaseCategory.RAG_RETRIEVAL_MANIPULATION,

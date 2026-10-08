@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -68,7 +68,6 @@ async def create_matrix(
     if not suite:
         raise NotFoundError("TestSuite", str(suite_id))
 
-    # Validate all test cases belong to suite
     for tc_id in test_case_ids:
         tc = await case_repo.get(tc_id)
         if not tc or tc.suite_id != suite_id:
@@ -96,7 +95,6 @@ async def create_matrix(
 
     matrix = await matrix_repo.create(matrix)
 
-    # Build cells
     cells = []
     for tc_id in test_case_ids:
         for config in configurations:
@@ -233,7 +231,6 @@ async def execute_matrix(
             baseline_repo, baseline_item_repo, regression_repo, review_repo
         )
 
-    # Update matrix status
     completed = sum(1 for c in cells if c.status == RunStatus.COMPLETED)
     failed = sum(1 for c in cells if c.status in (RunStatus.FAILED, RunStatus.CANCELLED))
 

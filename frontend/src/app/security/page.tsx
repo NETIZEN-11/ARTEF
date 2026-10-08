@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getAccessToken } from "@/lib/auth";
 import { Shield, Server, Activity, AlertTriangle, CheckCircle, Clock, Zap, FileText, Loader2 } from "lucide-react";
 
 export default function SecurityPage() {
+  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanning, setScanning] = useState(false);
@@ -29,11 +31,11 @@ export default function SecurityPage() {
   }, []);
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) window.location.href = "/login";
-      else fetchDashboard();
-    }
-  }, [isAuthenticated, isLoading, fetchDashboard]);
+    const token = getAccessToken();
+    if (token) { fetchDashboard(); return; }
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+    else if (!isLoading && isAuthenticated) fetchDashboard();
+  }, [isAuthenticated, isLoading, fetchDashboard, router]);
 
   const handleScan = async () => {
     setScanning(true);
@@ -55,18 +57,18 @@ export default function SecurityPage() {
     } finally { setBenchmarking(false); }
   };
 
-  if (isLoading || !isAuthenticated) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
+  if (isLoading && !getAccessToken()) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2"><Shield className="h-8 w-8 text-primary" />Model Security</h1>
-          <p className="text-muted-foreground">Comprehensive security testing and monitoring for AI models — promptfoo style</p>
+          <p className="text-muted-foreground">Autonomous vulnerability detection, serialization audit &amp; model assurance</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Scans Run</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{scanResult ? 1 : 0}</div></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Scans Run</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{scanResult?.total_scans ?? (scanResult ? 1 : (dashboard?.total_scans ?? 0))}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Critical Findings</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{scanResult?.critical ?? 0}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">High Findings</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{scanResult?.high ?? 0}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Status</CardTitle></CardHeader><CardContent><Badge variant={scanResult?.scan_status === "completed" ? "default" : "secondary"}>{scanResult?.scan_status || "idle"}</Badge></CardContent></Card>
@@ -86,7 +88,7 @@ export default function SecurityPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2"><Label>Model Path</Label><Input value={modelPath} onChange={e => setModelPath(e.target.value)} placeholder="./models/my-model" /></div>
                   <Button onClick={handleScan} disabled={scanning} className="w-full">{scanning ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Scanning...</> : "Scan Model"}</Button>
-                  <p className="text-xs text-muted-foreground">Detects pickle, PyTorch, TensorFlow, ONNX, HuggingFace vulnerabilities — like promptfoo model security</p>
+                  <p className="text-xs text-muted-foreground">Detects unsafe serialization (pickle, PyTorch, TensorFlow, ONNX) and model pipeline vulnerabilities</p>
                   <pre className="bg-muted p-3 rounded text-xs overflow-auto">{`artef security scan-model ./my-model --output report.json`}</pre>
                 </CardContent>
               </Card>

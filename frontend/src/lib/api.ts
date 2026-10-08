@@ -1,8 +1,22 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getAccessToken } from "./auth";
 
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-const API_URL = rawApiUrl.endsWith("/api/v1") ? rawApiUrl : `${rawApiUrl.replace(/\/+$/, "")}/api/v1`;
+export const getApiBaseUrl = () => {
+  const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (configured) {
+    return configured.endsWith("/api/v1")
+      ? configured
+      : `${configured.replace(/\/+$/, "")}/api/v1`;
+  }
+
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}/api/v1`;
+  }
+
+  return "/api/v1";
+};
+
+const API_URL = getApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_URL,
