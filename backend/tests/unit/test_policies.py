@@ -202,3 +202,25 @@ def test_should_block_merge():
     assert should_block_merge(fail_result) is True
     assert should_block_merge(warn_result) is False
     assert should_block_merge(pass_result) is False
+
+
+def test_gate_inconclusive_outranks_medium_regressions():
+    """Agent unreachable after a baseline: PASS->INCONCLUSIVE regressions are MEDIUM, but the
+    gate must fail closed, not WARN (WARN exits 0 and would allow the merge)."""
+    findings = [
+        RegressionFinding(
+            test_case_id="test",
+            previous_verdict=Verdict.PASS,
+            current_verdict=Verdict.INCONCLUSIVE,
+            regression_type=RegressionType.PASS_TO_INCONCLUSIVE,
+            severity=SeverityLevel.MEDIUM,
+            evidence=[],
+            baseline_run_id="baseline",
+            current_run_id="current",
+        )
+    ]
+
+    result = evaluate_gate(findings, 1, False)
+
+    assert result.decision == GateDecision.FAIL
+    assert result.exit_code == 1

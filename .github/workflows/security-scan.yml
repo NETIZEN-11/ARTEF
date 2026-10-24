@@ -1,5 +1,9 @@
 name: Security Scan
 
+# Bandit and the model-scanner tests are hard gates. Dependency audits, the secret scan and
+# the guardrail policy check are REPORTED (job stays green) until their baseline findings
+# are triaged; switch `continue-on-error` off for each once that is done.
+
 on:
   push:
     branches: [main, develop]
@@ -11,97 +15,102 @@ on:
 permissions:
   contents: read
 
-env:
-  SECRET_KEY: ci-secret-key-that-is-at-least-32-characters-long
-  DATABASE_URL: sqlite+aiosqlite:///./ci_test.db
-  REDIS_URL: redis://localhost:6379/0
-  CELERY_BROKER_URL: redis://localhost:6379/1
-  CELERY_RESULT_BACKEND: redis://localhost:6379/2
-  PYTHONPATH: backend
-
 jobs:
-  sast:
-    name: Static Analysis
+  python-static-analysis:
+    name: Backend static security analysis (bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
+      - run: pip install bandit
+      - name: Bandit (medium severity and above)
+        run: bandit -r backend/app -ll
 
-      - name: Install the tooling
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit pip-audit
-
-      - name: Bandit
-        run: bandit -r backend/app -ll -f screen
-
-      - name: Dependency audit
-        shell: bash
-        run: |
-          pip freeze | grep -v "^-e " | grep -v "^app-" > reqs.txt || true
-          pip-audit --requirement reqs.txt || true
-
-      - name: Secret scan
-        uses: gitleaks/gitleaks-action@v2
+  python-dependencies:
+    name: Python dependency audit (pip-audit, report only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pip-audit
+      - name: Audit locked dependencies
         continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pip-audit -r requirements.lock --format json --output pip-audit.json --progress-spinner off
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit
+          path: pip-audit.json
 
   dependency-review:
-    name: Dependency Review
+    name: Dependency review (new dependencies in the PR)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-
       - name: Dependency review
+        # Needs "Dependency graph" enabled in the repository settings (Settings > Code
+        # security); until then the action cannot run. Remove continue-on-error once enabled.
+        continue-on-error: true
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
 
   frontend-dependencies:
-    name: Frontend Dependency Audit
+    name: Frontend dependency audit (pnpm audit, report only)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - run: corepack enable && corepack prepare pnpm@10.18.0 --activate
+      - name: Audit (high and critical)
+        continue-on-error: true
+        run: pnpm audit --audit-level high
 
-      - name: Audit
-        run: pnpm audit --audit-level=high || true
-        working-directory: frontend
-
-  guardrails:
-    name: Guardrails Policy
+  secret-scan:
+    name: Secret scan (gitleaks, report only)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+  guardrails:
+    name: Guardrail policy (report only)
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-only-secret-key-0123456789abcdefghijkl
+      DATABASE_URL: sqlite+aiosqlite:///./ci.db
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: memory://
+      CELERY_RESULT_BACKEND: cache+memory://
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: |
+          pip install -r requirements-dev.lock
+          pip install -e . --no-deps
       - name: The guardrail engine blocks the known attack patterns
         continue-on-error: true
+        working-directory: backend
         run: |
           python - <<'PY'
           import asyncio
@@ -132,41 +141,17 @@ jobs:
           PY
 
   model-scanner:
-    name: Model Scanner
+    name: Model security scanner tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: A malicious pickle is reported and never executed
-        continue-on-error: true
-        run: |
-          python - <<'PY'
-          import asyncio
-          import os
-          import pickle
-          import tempfile
-          from pathlib import Path
-
-          from app.security.model_scanner.detectors import PickleDetector
-
-          class Exploit:
-              def __reduce__(self):
-                  return (os.system, ("echo pwned",))
-
-          with tempfile.TemporaryDirectory() as directory:
-              path = Path(directory)
-              (path / "model.pkl").write_bytes(pickle.dumps(Exploit()))
-              findings = asyncio.run(PickleDetector().scan(path))
-              assert findings, "the malicious pickle was not reported"
-              print(f"reported {len(findings)} finding(s)")
-          PY
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - run: |
+          pip install -r requirements-dev.lock
+          pip install -e . --no-deps
+      - name: Pickle scanner detects code-executing payloads without loading them
+        run: pytest backend/tests/unit/test_pickle_scanner.py -v -p no:cacheprovider

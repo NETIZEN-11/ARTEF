@@ -23,7 +23,7 @@ class GateEvaluator:
         self.result_repo = result_repo
         self.regression_repo = regression_repo
 
-    async def evaluate(self, run_id: UUID) -> GateResult:
+    async def evaluate(self, run_id: UUID, has_baseline: bool = True) -> GateResult:
         run = await self.run_repo.get(run_id)
         if not run:
             raise NotFoundError("Run", str(run_id))
@@ -47,22 +47,34 @@ class GateEvaluator:
 
         inconclusive_count = run.inconclusive_count
 
-        gate_result = evaluate_gate(findings, inconclusive_count, infrastructure_failure=False)
+        if has_baseline:
+            gate_result = evaluate_gate(findings, inconclusive_count, infrastructure_failure=False)
+        else:
+            # PRD F5: with no approved baseline there is nothing to diff against, so the gate
+            # fails closed until a human approves a baseline.
+            gate_result = GateResult(
+                decision=GateDecision.FAIL,
+                exit_code=1,
+                inconclusive_count=inconclusive_count,
+                summary=(
+                    "No approved baseline for this suite: regression gating is not possible. "
+                    "Review this run and approve it as the baseline."
+                ),
+            )
 
-        run.status = RunStatus.GATING
         run.regression_count = len(findings)
         run.critical_count = gate_result.critical_count
         run.high_count = gate_result.high_count
         run.medium_count = gate_result.medium_count
         run.low_count = gate_result.low_count
-
-        if gate_result.decision == GateDecision.BLOCK:
-            run.status = RunStatus.REVIEW_REQUIRED
-        elif gate_result.decision == GateDecision.FAIL:
-            run.status = RunStatus.FAILED
-        elif gate_result.decision in (GateDecision.PASS, GateDecision.WARN):
-            run.status = RunStatus.COMPLETED
-
+        run.gate_decision = GateDecision(gate_result.decision).value
+        run.gate_summary = gate_result.summary
+        # Status says whether the pipeline finished; the verdict lives in gate_decision.
+        run.status = (
+            RunStatus.REVIEW_REQUIRED
+            if gate_result.decision == GateDecision.BLOCK
+            else RunStatus.COMPLETED
+        )
         run.completed_at = datetime.utcnow()
         await self.run_repo.session.flush()
 

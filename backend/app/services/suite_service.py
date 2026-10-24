@@ -7,8 +7,8 @@ import yaml
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.domain.enums import ExpectedBehaviorType, TestCaseCategory, TestCaseSeverity
 from app.domain.value_objects import (
+    ExpectedBehavior,
     LLMRubric,
-    LLMRubricCriterion,
     MatcherConfig,
     TestCaseMetadata,
 )
@@ -118,6 +118,31 @@ SUITE_SCHEMA = {
 }
 
 
+def _case_columns(tc_data: dict) -> dict:
+    """Map a validated suite test case onto TestCase columns.
+
+    The value objects re-validate the matcher (e.g. regex compiles) and rubric; they are
+    then stored as plain JSON, the same shape the seed script and the scorer use.
+    """
+    expected_behavior = tc_data["expected_behavior"]
+    matcher = expected_behavior.get("matcher")
+    rubric = expected_behavior.get("rubric")
+    expected = ExpectedBehavior(
+        type=ExpectedBehaviorType(expected_behavior["type"]),
+        matcher=MatcherConfig(**matcher) if matcher else None,
+        rubric=LLMRubric(**rubric) if rubric else None,
+    )
+    return {
+        "category": TestCaseCategory(tc_data["category"]),
+        "severity": TestCaseSeverity(tc_data["severity"]),
+        "input": tc_data["input"],
+        "expected_behavior_type": expected.type,
+        "matcher_config": expected.matcher.model_dump(mode="json", exclude_none=True) if expected.matcher else None,
+        "rubric_config": expected.rubric.model_dump(mode="json", exclude_none=True) if expected.rubric else None,
+        "test_case_metadata": TestCaseMetadata(**tc_data.get("metadata", {})).model_dump(mode="json", exclude_none=True),
+    }
+
+
 class SuiteService:
     def __init__(self, suite_repo: TestSuiteRepository, case_repo: TestCaseRepository):
         self.suite_repo = suite_repo
@@ -167,52 +192,11 @@ class SuiteService:
         return suite
 
     async def _create_test_case(self, suite_id: UUID, tc_data: dict, user_id: UUID) -> TestCase:
-        expected_behavior = tc_data["expected_behavior"]
-        matcher_config = None
-        rubric_config = None
-
-        if expected_behavior.get("matcher"):
-            m = expected_behavior["matcher"]
-            matcher_config = MatcherConfig(
-                type=ExpectedBehaviorType(m["type"]),
-                pattern=m.get("pattern"),
-                keywords=m.get("keywords"),
-                case_sensitive=m.get("case_sensitive", False),
-                regex_timeout_ms=m.get("regex_timeout_ms", 1000),
-                expected_keys=m.get("expected_keys"),
-                required_fields=m.get("required_fields"),
-            )
-
-        if expected_behavior.get("rubric"):
-            r = expected_behavior["rubric"]
-            criteria = [
-                LLMRubricCriterion(
-                    name=c["name"],
-                    description=c["description"],
-                    weight=c.get("weight", 1.0),
-                    pass_threshold=c.get("pass_threshold", 0.7),
-                )
-                for c in r["criteria"]
-            ]
-            rubric_config = LLMRubric(
-                criteria=criteria,
-                overall_threshold=r.get("overall_threshold", 0.7),
-                require_evidence=r.get("require_evidence", True),
-            )
-
-        metadata = TestCaseMetadata(**tc_data.get("metadata", {}))
-
         test_case = TestCase(
             suite_id=suite_id,
             test_case_id=tc_data["test_case_id"],
-            category=TestCaseCategory(tc_data["category"]),
-            severity=TestCaseSeverity(tc_data["severity"]),
-            input=tc_data["input"],
-            expected_behavior_type=ExpectedBehaviorType(expected_behavior["type"]),
-            matcher_config=matcher_config.model_dump() if matcher_config else None,
-            rubric_config=rubric_config.model_dump() if rubric_config else None,
-            metadata=metadata,
             created_by=user_id,
+            **_case_columns(tc_data),
         )
         test_case = await self.case_repo.create(test_case)
 
@@ -250,15 +234,13 @@ class SuiteService:
             raise ValidationError(f"Invalid JSON: {e}")
         return await self.create_suite(data, user_id)
 
-    async def get_suite_with_cases(self, suite_id: UUID) -> TestSuite | None:
+    async def get_suite_with_cases(self, suite_id: UUID) -> tuple[TestSuite, list[TestCase]] | None:
+        # Return cases alongside the suite rather than assigning suite.test_cases: replacing
+        # a relationship collection forces a lazy load, which async sessions cannot do.
         suite = await self.suite_repo.get(suite_id)
         if not suite:
             return None
-        # NOTE: the test cases are *not* assigned back onto `suite.test_cases`.
-        # That relationship is `lazy="dynamic"`, and assigning to it outside a
-        # greenlet context raises `MissingGreenlet`. Callers that need the
-        # cases query `case_repo.list_by_suite(...)` directly.
-        return suite
+        return suite, await self.case_repo.list_by_suite(suite_id)
 
     async def create_version(
         self, suite_id: UUID, data: dict, user_id: UUID, changelog: str = ""
@@ -276,52 +258,8 @@ class SuiteService:
             existing = await self.case_repo.get_by_suite_and_id(suite_id, tc_data["test_case_id"])
             if existing:
                 existing.version += 1
-                existing.category = TestCaseCategory(tc_data["category"])
-                existing.severity = TestCaseSeverity(tc_data["severity"])
-                existing.input = tc_data["input"]
-                expected_behavior = tc_data["expected_behavior"]
-                matcher_config = None
-                rubric_config = None
-
-                if expected_behavior.get("matcher"):
-                    m = expected_behavior["matcher"]
-                    matcher_config = MatcherConfig(
-                        type=ExpectedBehaviorType(m["type"]),
-                        pattern=m.get("pattern"),
-                        keywords=m.get("keywords"),
-                        case_sensitive=m.get("case_sensitive", False),
-                        regex_timeout_ms=m.get("regex_timeout_ms", 1000),
-                        expected_keys=m.get("expected_keys"),
-                        required_fields=m.get("required_fields"),
-                    )
-
-                if expected_behavior.get("rubric"):
-                    r = expected_behavior["rubric"]
-                    criteria = [
-                        LLMRubricCriterion(
-                            name=c["name"],
-                            description=c["description"],
-                            weight=c.get("weight", 1.0),
-                            pass_threshold=c.get("pass_threshold", 0.7),
-                        )
-                        for c in r["criteria"]
-                    ]
-                    rubric_config = LLMRubric(
-                        criteria=criteria,
-                        overall_threshold=r.get("overall_threshold", 0.7),
-                        require_evidence=r.get("require_evidence", True),
-                    )
-
-                existing.expected_behavior_type = ExpectedBehaviorType(expected_behavior["type"])
-                existing.matcher_config = (
-                    matcher_config.model_dump() if matcher_config else None
-                )
-                existing.rubric_config = (
-                    rubric_config.model_dump() if rubric_config else None
-                )
-                existing.test_case_metadata = TestCaseMetadata(
-                    **tc_data.get("metadata", {})
-                ).model_dump()
+                for column, value in _case_columns(tc_data).items():
+                    setattr(existing, column, value)
                 existing.updated_at = datetime.utcnow()
 
                 version = TestCaseVersion(

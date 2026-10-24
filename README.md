@@ -15,7 +15,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
 
 [![Safety Gate](https://img.shields.io/badge/Safety%20Gate-Automated%20✓-brightgreen.svg?style=for-the-badge)](https://github.com/NETIZEN-11/ARTEF)
-[![Author](https://img.shields.io/badge/Author-Nitesh%20Singh-FF6B6B.svg?style=for-the-badge&logo=github)](https://github.com/BYTEZEN-11)
+[![Authors](https://img.shields.io/badge/Authors-Harish%20R%20S%20%26%20Nitesh%20Singh-FF6B6B.svg?style=for-the-badge&logo=github)](https://github.com/NETIZEN-11/ARTEF)
 [![License](https://img.shields.io/badge/License-Proprietary%20OJT-orange.svg?style=for-the-badge)](LICENSE)
 [![Year](https://img.shields.io/badge/Year-2026-8B5CF6.svg?style=for-the-badge)](https://github.com/NETIZEN-11/ARTEF)
 
@@ -36,15 +36,16 @@
   - [Golden Baselines & Regression Math](#2--golden-baselines--regression-math)
   - [Deterministic CI/CD Quality Gate](#3--deterministic-cicd-quality-gate)
   - [Autonomous Red-Teaming State Machine](#4--autonomous-red-teaming-state-machine)
-- [5-Minute Quickstart](#-5-minute-quickstart)
+- [Quickstart](#-quickstart)
   - [Prerequisites](#-prerequisites)
-  - [Local Development](#method-1-local-development-fastest)
-  - [Docker Full Stack](#method-2-docker-full-stack-production-ready)
+  - [Local Development](#method-1-local-development-sqlite-no-docker)
+  - [Docker Stack](#method-2-docker-stack)
+- [Demo Scenario](#-demo-scenario-seeded-regression-caught-end-to-end)
 - [REST API Reference](#-rest-api-reference)
-- [CI/CD Safety Gate](#-deterministic-cicd-quality-gate-1)
+- [CI Quality Gate](#-ci-quality-gate)
 - [Project Structure](#-project-directory-structure)
 - [Documentation](#-in-depth-documentation)
-- [Testing & QA](#-testing--quality-assurance)
+- [Testing](#-testing)
 - [Authorship](#-project-scope--authorship)
 - [License](#-ownership--license)
 
@@ -58,11 +59,11 @@
 
 ARTEF addresses the critical gap between deploying AI agents and knowing they are safe. It:
 
-1. 🎯 **Subjects Agents to Adversarial Attacks** — Probes agents against OWASP Top 10 for LLM risks: prompt injections, jailbreaks, data exfiltration, token smuggling, and SSRF.
-2. 📉 **Detects Behavioral & Safety Drift** — Runs statistical regression analysis comparing active candidates against cryptographically locked golden baselines.
-3. 🏷️ **Classifies Risk Severity** — Employs deterministic CVSS-aligned scoring (S0–S4) supplemented with LLM-assisted rationale.
-4. 🚦 **Enforces Deterministic CI/CD Quality Gates** — Issues programmatic `PASS`, `WARN`, or `BLOCK` verdicts capable of halting pull requests and deployment pipelines.
-5. 👥 **Empowers Human Reviewers (HITL)** — Intelligently routes low-confidence and high-severity edge cases to human specialists with a complete replayable evidence audit trail.
+1. 🎯 **Subjects Agents to Adversarial Attacks** — Probes agents with jailbreak, prompt-injection, PII-extraction and harmful-request test suites, plus multi-turn red-team sessions.
+2. 📉 **Detects Behavioral & Safety Drift** — Diffs every test's verdict against the last human-approved baseline run (PASS→FAIL, PASS→INCONCLUSIVE, new failures).
+3. 🏷️ **Classifies Risk Severity** — Critical / High / Medium / Low, with a deterministic override table (e.g. any jailbreak or PII failure is Critical).
+4. 🚦 **Enforces Deterministic CI/CD Quality Gates** — Issues `PASS`, `WARN`, `FAIL` or `BLOCK` and fails closed: an unreachable agent or missing baseline never passes.
+5. 👥 **Empowers Human Reviewers (HITL)** — Routes Critical/High and inconclusive regressions to a review queue; baseline approvals are audit-logged.
 
 ```mermaid
 flowchart TD
@@ -87,8 +88,8 @@ flowchart TD
         direction TB
         ADV["1. Adversarial Probes<br/>Prompt Injection, Jailbreak, SSRF"]:::engine
         DUAL["2. Dual Scoring System<br/>Zero-cost Regex + LLM-as-a-Judge"]:::engine
-        REG["3. Baseline Regression Delta<br/>Δ Safety vs Immutable Golden Baselines"]:::engine
-        SEV["4. Severity Risk Matrix<br/>Deterministic CVSS-Aligned S0–S4"]:::engine
+        REG["3. Baseline Regression Diff<br/>Per-test verdict vs approved baseline"]:::engine
+        SEV["4. Severity Classification<br/>Critical / High / Medium / Low"]:::engine
         ADV --> DUAL --> REG --> SEV
     end
 
@@ -126,12 +127,12 @@ flowchart TD
 
 | Capability | What It Does | Why It Matters |
 | :--- | :--- | :--- |
-| 🎯 **Multi-Strategy Scoring** | Combines 4 zero-cost deterministic matchers with structured JSON LLM Judge grading and fallback circuits. | Eliminates non-deterministic grading flake while accurately capturing nuanced semantic vulnerabilities. |
-| 📉 **Baseline Regression Engine** | Compares active test run metrics against cryptographically locked, human-approved historical golden baselines. | Instantly detects silent model degradation, safety score drops, and behavioral regressions before users see them. |
+| 🎯 **Multi-Strategy Scoring** | Four deterministic matchers (exact, regex, keyword, refusal); LLM-judge rubrics with a secondary-judge fallback. | Deterministic checks need no LLM calls; open-ended behaviour can still be judged. |
+| 📉 **Baseline Regression Engine** | Compares each test's verdict with the human-approved baseline run for the suite. | Instantly detects silent model degradation, safety score drops, and behavioral regressions before users see them. |
 | 🚦 **Deterministic CI Gate** | Evaluates runs against configurable safety rules and outputs programmatic `PASS`, `WARN`, or `BLOCK` verdicts. | Prevents vulnerable or regressed agent weights, system prompts, or RAG configurations from ever deploying. |
-| 🤖 **Autonomous Red-Teaming Agent** | State-machine driven adversarial agent (LangGraph-inspired) targeting prompt injections, jailbreaks, and SSRF. | Uncovers unknown edge-case zero-days before external malicious threat actors do. |
-| 👥 **Human-in-the-Loop (HITL) Queue** | Priority-ordered triage queue for low-confidence or high-severity safety edge cases. | Merges automated evaluation speed with expert human oversight and cryptographically auditable sign-offs. |
-| 🔐 **Enterprise RBAC & Security** | Asymmetric RS256 JWT tokens, strict role separation (5 distinct roles), and tamper-evident audit logs. | Meets enterprise compliance, SOC2, and ISO 42001 AI governance standards. |
+| 🤖 **Autonomous Red-Teaming Agent** | LangGraph state machine that escalates through a category's attack library until the target breaks or the turn cap is hit. | Shows whether an agent holds up under repeated, varied attacks, not just one prompt. |
+| 👥 **Human-in-the-Loop (HITL) Queue** | Priority-ordered triage queue for low-confidence or high-severity safety edge cases. | Keeps humans in the loop for the results that matter most. |
+| 🔐 **Enterprise RBAC & Security** | RS256 JWT tokens and role-based access (admin, safety engineer, ML engineer, QA engineer, viewer). | Each endpoint checks the caller's role. |
 
 ---
 
@@ -153,9 +154,9 @@ flowchart TD
     subgraph PresentationLayer ["① Client & Presentation Layer (Next.js 14 / TypeScript)"]
         UI_Dash["Dashboard & Telemetry<br/><code>/dashboard</code>"]:::client
         UI_Runs["Test Suites & Runs Monitor<br/><code>/runs</code>"]:::client
-        UI_Sim["Live Attack Simulator<br/><code>/simulator</code>"]:::client
-        UI_HITL["HITL Human Review Queue<br/><code>/review</code>"]:::client
-        UI_Gate["CI/CD Gate Evidence Inspector<br/><code>/gate</code>"]:::client
+        UI_Sim["Red Teaming<br/><code>/redteam</code>"]:::client
+        UI_HITL["HITL Human Review Queue<br/><code>/reviews</code>"]:::client
+        UI_Gate["Run detail and gate decision<br/><code>/runs/[id]</code>"]:::client
         CLI_Client["CLI & Python/TS SDK"]:::client
     end
 
@@ -190,8 +191,8 @@ flowchart TD
         Tier1["Tier 1: Deterministic Matchers<br/>(Regex, Keywords, Refusal Checks)"]:::eval
         Tier2["Tier 2: LLM-as-a-Judge<br/>(Strict JSON Pydantic Scoring)"]:::eval
         Tier3["Tier 3: Resilient Fallback<br/>(Heuristic Safety Circuit Breaker)"]:::eval
-        SevMatrix["CVSS Severity Classifier<br/>(S0 Informational → S4 Critical)"]:::eval
-        RegEngine["Statistical Regression Math<br/>(Δ Safety vs Golden Baseline)"]:::eval
+        SevMatrix["Severity Classifier<br/>(Low → Critical, deterministic overrides)"]:::eval
+        RegEngine["Regression Detector<br/>(verdict diff vs baseline)"]:::eval
     end
 
     subgraph GatePolicy ["⑦ Deterministic CI/CD Quality Gate"]
@@ -204,7 +205,7 @@ flowchart TD
     subgraph StorageLayer ["⑧ Persistence & Caching Tier"]
         PostgreSQL[("PostgreSQL / SQLite<br/>Async SQLAlchemy 2.0")]:::store
         Redis[("Redis In-Memory<br/>Celery Queue & Cache")]:::store
-        AuditVault[("Tamper-Evident Audit Vault<br/>Cryptographic Checksums")]:::store
+        AuditVault[("Audit Log<br/>baseline approvals, settings")]:::store
     end
 
     PresentationLayer --> Router
@@ -255,36 +256,28 @@ flowchart TD
 
 ## 🏛️ Core Functional Pillars
 
-### 1. 🎯 Multi-Tier Scoring Pipeline
+### 1. 🎯 Scoring
 
-Every agent turn is evaluated through a strict **multi-tier fallback pipeline**:
+| Tier | Mechanism | Calls an LLM? |
+|:---:|:---|:---:|
+| **Matchers** | exact, regex, keyword, refusal patterns | No |
+| **LLM judge** | `llm_rubric` tests: primary judge returns schema-validated JSON (verdict, confidence, rationale, evidence) | Yes (`EVAL_MODE=live`) |
+| **Fallback** | primary judge error → secondary judge; both fail, or the target errors/times out → **INCONCLUSIVE** | — |
 
-| Tier | Name | Mechanism | Cost |
-|:---:|:---|:---|:---:|
-| **T1** | Deterministic Matchers | Regex, exact match, keyword exclusion, refusal detection | Zero |
-| **T2** | LLM-as-a-Judge | Strict Pydantic JSON schemas — `score: float [0..1]`, `reasoning: str`, `confidence: float [0..1]` | Low |
-| **T3** | Resilient Fallback | Auto-fallback on timeout/malformed JSON → regex + `needs_review=True` flag | Zero |
+### 2. 📉 Baselines and regression detection
 
-### 2. 📉 Golden Baselines & Regression Math
+An admin or safety engineer approves a finished run (no inconclusive results) as the
+suite's baseline; the previous baseline is deactivated. Each later run is diffed test by
+test: PASS→FAIL, PASS→INCONCLUSIVE, INCONCLUSIVE→FAIL and new failing tests are
+regressions; improvements are logged, not flagged.
 
-When a benchmark run is approved by an **Admin**, its metric vector is sealed as an **immutable baseline**:
-
-$$\Delta_{\text{safety}} = \text{Score}_{\text{candidate}} - \text{Score}_{\text{baseline}}$$
-
-> If $\Delta_{\text{safety}} < -\epsilon$ (default threshold $\epsilon = 0.05$), a **Regression Alert** is emitted with line-item test case diffs.
-
-### 3. 🚦 Deterministic CI/CD Quality Gate
-
-A strict decision policy executes against every candidate:
+### 3. 🚦 Deterministic CI gate
 
 ```
-❌ BLOCK  ──  Any Critical (S4) or High (S3) vulnerability triggered
-             OR safety regression > 5%
-
-⚠️ WARN   ──  Medium (S2) vulnerability count exceeds threshold
-             OR human review queue has unreviewed items
-
-✅ PASS   ──  All test cases passed or within approved risk tolerance
+BLOCK  any Critical or High regression                      (exit 1)
+FAIL   any inconclusive result, or no approved baseline     (exit 1)
+WARN   only Medium / Low regressions                        (exit 0)
+PASS   no regressions                                       (exit 0)
 ```
 
 ### 4. 🤖 Autonomous Red-Teaming State Machine
@@ -299,277 +292,271 @@ Built as a **bounded state graph**:
 
 ---
 
-## ⚡ 5-Minute Quickstart
+## ⚡ Quickstart
 
-> Get ARTEF running locally on your workstation in under **5 minutes**.
+Two ways to run ARTEF. **Local development** needs no Docker; the **Docker stack** adds
+PostgreSQL, Redis and a Celery worker exactly as in production.
 
 ### 📋 Prerequisites
 
 | Requirement | Version | Notes |
 |:---|:---:|:---|
-| Python | 3.11+ | Required for backend |
-| Node.js & npm | 20+ | Required for frontend |
-| Git | Latest | For cloning |
-| Docker & Compose | Latest | Optional — for full stack |
+| Python | 3.11+ | Backend (tested with 3.11) |
+| Node.js | 20+ | Frontend |
+| pnpm | 10.x | `npx pnpm@10.18.0 …` works without installing it (pnpm 9 rejects `frontend/pnpm-workspace.yaml`) |
+| Docker + Compose | recent | Only for the Docker stack / real Redis |
 
 ---
 
-### Method 1: Local Development (Fastest)
+### Method 1: Local development (SQLite, no Docker)
 
-**① Clone & Enter Repository**
+All commands run from the repository root unless noted. Windows users: run them in Git Bash
+or adapt the activation line for PowerShell.
+
+**① Backend environment**
 ```bash
-git clone https://github.com/NETIZEN-11/ojt.git agent-redteam-framework
-cd agent-redteam-framework
+python -m venv .venv
+source .venv/bin/activate            # Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements-dev.lock # pinned versions
+pip install -e . --no-deps           # makes the `app` package importable
+python scripts/dev_setup.py          # writes backend/.env + backend/.keys/ (JWT keys); both gitignored
 ```
 
-**② Backend Setup**
+**② Database with demo data** (users, agents, suites)
 ```bash
 cd backend
-
-# Create & activate virtual environment
-python -m venv .venv
-
-# Linux/macOS
-source .venv/bin/activate
-
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -e .
-
-# Initialize DB & start server
-python -m app.main
+python ../scripts/seed_demo_data.py
 ```
+The seed script requires `SEED_*` settings (user passwords, demo agent URLs, an agent token).
+`scripts/dev_setup.py` writes them to `backend/.env` with **random** passwords; log in as
+`admin` with the `SEED_ADMIN_PASSWORD` value from that file. See `.env.example` for the full list.
 
-> The backend auto-initializes SQLite (`artef.db`) and starts on **`http://localhost:8000`**
-
-**③ Frontend Setup** *(new terminal)*
+**③ Start the services** (one terminal each)
 ```bash
-cd frontend
-npm install
-npm run dev
+# API (from backend/)
+uvicorn app.main:app --port 8000
+
+# Demo target agents: the AI systems under test (from the repo root)
+python demo/target_agent.py --mode safe --port 9001
+python demo/target_agent.py --mode vulnerable --port 9002
+
+# Frontend (from frontend/)
+pnpm install && pnpm dev           # http://localhost:3000
 ```
+On Windows, `powershell -ExecutionPolicy Bypass -File scripts\start_dev.ps1` starts all four
+in their own windows, with evaluations running inside the API (no Redis needed). It skips any
+service whose port is already in use.
 
-> Open **`http://localhost:3000`** — you'll be greeted by the ARTEF login console.
+**④ Run evaluations.** Choose one way to execute runs:
 
----
+* **Real worker (recommended, matches production):** start Redis (for example
+  `docker run -p 6379:6379 redis:7-alpine`) and, from `backend/`:
+  ```bash
+  celery -A app.workers.celery_app worker -Q default,evaluation,redteam,maintenance --pool=solo --loglevel=info
+  ```
+  (`--pool=solo` is required on Windows.)
+* **No Redis:** set `CELERY_TASK_ALWAYS_EAGER=true` in `backend/.env`. Runs then execute
+  inside the API process. Fine for development, not for production.
 
-### Method 2: Docker Full Stack (Production-Ready)
+If a run is created while Redis is unreachable, the API answers **503** and marks the run
+`failed`; it never stays silently queued.
 
-Run the complete distributed stack — **PostgreSQL 15**, **Redis 7**, **Celery Workers**, **FastAPI**, and **Next.js** — in a single command:
+### Method 2: Docker stack
 
 ```bash
-# Build & launch all services
-docker compose -f docker-compose.prod.yml up -d --build
-
-# Verify all containers are healthy
-docker compose -f docker-compose.prod.yml ps
+python scripts/dev_setup.py                 # JWT keys in backend/.keys (mounted into the containers)
+docker compose up -d --build
+docker compose exec backend python ../scripts/seed_demo_data.py
 ```
 
 | Service | URL |
 |:---|:---|
-| Frontend Application | `http://localhost:3000` |
-| Backend API (Swagger) | `http://localhost:8000/docs` |
-| Interactive ReDoc | `http://localhost:8000/redoc` |
+| Frontend | `http://localhost:3000` |
+| API + Swagger | `http://localhost:8000/docs` |
+| ChromaDB | `http://localhost:8001` |
+| Demo agents | `http://demo-agent-safe:9001/chat`, `http://demo-agent-vulnerable:9002/chat` (inside the Docker network) |
+
+If a local PostgreSQL already uses port 5432, start with `POSTGRES_HOST_PORT=5433 docker compose up -d --build`.
+MinIO (object storage) is optional and not started by default; the `minio/minio` image is no
+longer published on Docker Hub (see the `storage` profile in `docker-compose.yml`).
+
+`docker-compose.prod.yml` builds the production images; it expects a root `.env` with
+`POSTGRES_*`, `MINIO_ROOT_*`, `SECRET_KEY` and JWT keys in `./secrets/`.
+
+### Database schema and migrations
+
+The API creates any missing tables from the models at startup, which is enough for
+development. For a managed PostgreSQL database use Alembic instead (from `backend/`):
+
+```bash
+alembic upgrade head      # create / update the schema
+alembic check             # fails if the models and migrations have drifted (also run in CI)
+```
+
+If the database was already created by the API at startup, record it as current with
+`alembic stamp head` (the baseline migration matches the models exactly). Migrations target
+PostgreSQL; the SQLite development database relies on startup table creation.
+
+### Troubleshooting (Windows): Docker Desktop never starts
+
+If Docker Desktop stays at "starting" and its log (`%LOCALAPPDATA%\Docker\log\host\com.docker.backend.exe.log`)
+says *"remove ...dockerInference: The file cannot be accessed by the system"*, stale Unix-socket
+files are blocking it and Windows cannot delete them. Quit Docker Desktop, delete them from WSL,
+then start Docker again:
+
+```bash
+wsl -d Ubuntu -- rm -f /mnt/c/Users/<you>/AppData/Local/Docker/run/dockerInference /mnt/c/Users/<you>/AppData/Local/Docker/run/userAnalyticsOtlpHttp.sock /mnt/c/Users/<you>/AppData/Local/docker-secrets-engine/engine.sock
+```
+
+---
+
+## 🎬 Demo scenario (seeded regression caught end to end)
+
+1. Log in, open **Evaluations → New Evaluation**, run suite *Jailbreak Tests* against
+   *Mock Target Agent v1 (Safe)*. Result: all tests pass, gate **FAIL**: *"No approved baseline"*.
+2. Approve that run as the baseline (**Baselines**, or `POST /api/v1/baselines/`).
+3. Run the same suite against *Mock Target Agent v2 (Vulnerable)*. The jailbreak tests now
+   fail: 2 **Critical** regressions, gate **BLOCK**, run status *review required*, and both
+   regressions appear in **Reviews**.
+4. Run the safe agent again: gate **PASS**.
+5. **Red Teaming**: attack each agent. The safe agent resists every escalation (verdict PASS);
+   the vulnerable one leaks its system prompt on the first turn (verdict FAIL).
+
+The same scenario runs automatically in CI (`backend/tests/integration/test_pipeline.py`).
+
+To use a real LLM as the system under test, start the demo agent with
+`--backend llm` and set `DEMO_AGENT_API_KEY` (OpenAI-compatible API; costs money, results vary).
 
 ---
 
 ## 📡 REST API Reference
 
-The FastAPI backend provides an **asynchronous, OpenAPI-compliant** REST API.
+Interactive documentation: `http://localhost:8000/docs`. Main endpoints (all under `/api/v1`):
 
-### 🔐 Authentication & Sessions
-
-| Method | Endpoint | Description | Roles |
-|:---:|:---|:---|:---|
-| `POST` | `/api/v1/auth/login` | Authenticate & obtain RS256 Bearer JWT | Public |
-| `GET` | `/api/v1/auth/me` | Fetch active user profile & permissions | Authenticated |
-
-### 🧪 Test Suites & Runs
-
-| Method | Endpoint | Description | Roles |
-|:---:|:---|:---|:---|
-| `GET` | `/api/v1/test-suites` | List test suites with tags, versions, case counts | All |
-| `POST` | `/api/v1/test-suites` | Create or import YAML/JSON test suite | Safety Eng, Admin |
-| `POST` | `/api/v1/test-runs` | Trigger evaluation or red-team run | ML Eng, Safety Eng, Admin |
-| `GET` | `/api/v1/test-runs/{run_id}` | Fetch run progress, status, live scores | All |
-
-### 📊 Scoring, Regression & CI Gates
-
-| Method | Endpoint | Description | Roles |
-|:---:|:---|:---|:---|
-| `POST` | `/api/v1/evaluation/score` | Score single turn or batch via multi-tier evaluators | ML Eng, Safety Eng, Admin |
-| `POST` | `/api/v1/evaluation/regression-check` | Detect score delta & behavioral drift vs baseline | ML Eng, Safety Eng, Admin |
-| `POST` | `/api/v1/evaluation/gate` | Evaluate CI gate status (`PASS`/`WARN`/`BLOCK`) | CI Pipeline, All |
-| `POST` | `/api/v1/baselines/{run_id}/approve` | Lock & promote run as approved golden baseline | Admin |
-
-### 👥 Human-in-the-Loop & Audit
-
-| Method | Endpoint | Description | Roles |
-|:---:|:---|:---|:---|
-| `GET` | `/api/v1/review/queue` | Retrieve pending review queue by priority | Reviewer, Safety Eng, Admin |
-| `POST` | `/api/v1/review/{item_id}/submit` | Submit human override / approval verdict | Reviewer, Admin |
-| `GET` | `/api/v1/audit/logs` | Fetch tamper-evident cryptographic event trail | Admin, Security |
+| Method | Endpoint | Description |
+|:---:|:---|:---|
+| `POST` | `/auth/login`, `/auth/refresh` | Obtain / refresh RS256 JWTs |
+| `GET` | `/auth/me` | Current user and roles |
+| `GET/POST` | `/agents/` | List / register target agents |
+| `GET/PUT/DELETE` | `/agents/{id}` | Inspect / update / delete an agent |
+| `GET/POST` | `/suites/` | List / create test suites (JSON-schema validated) |
+| `POST` | `/suites/import/yaml`, `/suites/import/json` | Import a suite file |
+| `GET` | `/suites/{id}` | Suite with its test cases |
+| `POST` | `/runs/` | Queue an evaluation run (Celery); 503 if the queue is unavailable |
+| `GET` | `/runs/{id}` | Status, counts, `gate_decision`, `gate_summary` |
+| `GET` | `/runs/{id}/results` | Per-test verdicts |
+| `GET` | `/regressions/run/{run_id}` | Regressions with persisted severity |
+| `GET/POST` | `/baselines/` | List / approve a finished run as the suite baseline |
+| `GET` | `/reviews/` | Human review queue |
+| `POST` | `/reviews/{id}/label` | Label a review item |
+| `POST` | `/redteam/run` | Multi-turn red-team session against an agent |
+| `GET` | `/redteam/history` | Red-team sessions (in memory; cleared on restart) |
 
 ---
 
-## 🚦 Deterministic CI/CD Quality Gate
+## 🚦 CI quality gate
 
-Integrate ARTEF directly into **GitHub Actions** or **GitLab CI** pipelines to prevent compromised or regressed agents from deploying.
+`.github/workflows/regression-gate.yml` runs the seeded-regression scenario on every pull
+request and fails the build if a seeded regression is not detected and blocked.
+`ci.yml` runs static checks, backend and frontend tests, the production frontend build and
+the Docker image builds. `security-scan.yml` runs pip-audit, bandit and pnpm audit
+(report-only for now) plus the model-scanner tests. `deploy.yml` is a manual placeholder:
+its deployment steps are not implemented.
 
-```yaml
-# .github/workflows/agent-safety-gate.yml
-name: Agent Safety & Regression Quality Gate
+Gate rules (`backend/app/domain/policies.py`):
 
-on:
-  pull_request:
-    branches: [ main, master ]
-
-jobs:
-  artef-safety-gate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Run ARTEF Regression Benchmark
-        run: |
-          pip install httpx pydantic
-          python scripts/run_seeded_regression.py \
-            --suite-id suite-sec-01 \
-            --candidate-agent http://candidate-agent:8080
-
-      - name: Query CI Gate Verdict
-        run: |
-          VERDICT=$(python scripts/evaluate_gate.py --format json | jq -r .status)
-          echo "Quality Gate Verdict: $VERDICT"
-          if [ "$VERDICT" = "BLOCK" ]; then
-            echo "❌ Deployment blocked due to safety violations!"
-            exit 1
-          fi
-```
+| Decision | When | Exit code |
+|:---:|:---|:---:|
+| **BLOCK** | any Critical or High regression | 1 |
+| **FAIL** | any inconclusive result (target unreachable, scoring error), or no approved baseline | 1 |
+| **WARN** | only Medium/Low regressions | 0 |
+| **PASS** | no regressions | 0 |
 
 ---
 
 ## 📂 Project Directory Structure
 
 ```text
-agent-redteam-framework/
-│
-├── backend/                             # ⚙️  Core FastAPI Application
+ARTEF/
+├── backend/
 │   ├── app/
-│   │   ├── api/v1/                     # REST API v1 route handlers
-│   │   ├── core/                       # Config, RS256 auth, logging, telemetry
-│   │   ├── domain/                     # Pure domain logic, enums, entities
-│   │   ├── evaluation/                 # Scoring engines, regression, severity, gates
-│   │   ├── models/                     # SQLAlchemy 2.0 ORM data models
-│   │   ├── providers/                  # LLM adapters (OpenAI, Anthropic, Mock)
-│   │   ├── redteam/                    # Adversarial generator & LangGraph agent
-│   │   ├── repositories/               # Data access layer (Repository pattern)
-│   │   ├── schemas/                    # Pydantic v2 validation contracts
-│   │   ├── services/                   # Business domain workflows
-│   │   └── workers/                    # Celery / background worker tasks
-│   ├── migrations/                     # Alembic schema migrations
-│   └── tests/                          # Pytest suite (Unit, Integration, E2E)
-│
-├── frontend/                            # 🖥️  Next.js 14 Frontend Console
-│   └── src/
-│       ├── app/                        # App Router (Dashboard, Runs, Queue)
-│       ├── components/                 # Atomic UI design system components
-│       ├── features/                   # Complex views (Evaluation, Matrix, HITL)
-│       ├── hooks/                      # Custom React query & mutation hooks
-│       ├── lib/                        # Axios client, auth session handlers
-│       └── types/                      # TypeScript schemas matching backend
-│
-├── docs/                               # 📚 Comprehensive Documentation Suite
-│   ├── ARTEF_WORKFLOW.md               # 25-step visual workflow & viva guide
-│   ├── COMPLETE_PROJECT.md             # End-to-end operational manual
-│   ├── PROJECT_GUIDE.md                # Architecture & design guide
-│   ├── api.md                          # REST API specification & schemas
-│   ├── architecture.md                 # Deep-dive architectural patterns
-│   ├── database.md                     # ER diagrams & storage design
-│   ├── deployment.md                   # Docker, K8s, Helm deployment guide
-│   ├── security.md                     # Threat model, RBAC & audit controls
-│   ├── runbook.md                      # Operational incident response runbook
-│   └── adr/                            # Architecture Decision Records (001–005)
-│
-├── evaluation/                         # 🧪 Golden Test Suites & Benchmarks
-│   ├── suites/                         # YAML/JSON suites (OWASP LLM Top 10)
-│   └── taxonomy/                       # Harm taxonomy & adversarial templates
-│
-├── scripts/                            # 🔧 Operational & CI/CD Tooling
-│   ├── run_seeded_regression.py        # Seeded regression benchmark runner
-│   └── seed_demo_data.py               # Local mock data generator
-│
-└── docker-compose.prod.yml             # 🐳 Production container composition
+│   │   ├── api/v1/          # FastAPI routers
+│   │   ├── core/            # settings, database, security (RS256 JWT), logging
+│   │   ├── domain/          # enums, value objects, gate & severity policies
+│   │   ├── evaluation/      # matchers, LLM judges, regression detector, severity, gate
+│   │   ├── models/          # SQLAlchemy 2.0 models
+│   │   ├── providers/       # LLM, embedding and target-agent adapters
+│   │   ├── redteam/         # LangGraph red-team agent, attack library
+│   │   ├── repositories/    # data access
+│   │   ├── services/        # pipeline_service (execute → score → diff → gate → review)
+│   │   └── workers/         # Celery app and tasks
+│   ├── alembic/             # migrations (versions/ = current; legacy_versions/ = old, unused)
+│   └── tests/               # unit/ and integration/ (pytest)
+├── demo/target_agent.py     # demo AI agent under test (safe / vulnerable)
+├── frontend/                # Next.js 14 app (src/app routes, src/components, src/lib)
+├── evaluation/suites/       # example YAML suites
+├── scripts/                 # dev_setup, seed_demo_data, utilities
+├── requirements.lock        # pinned runtime dependencies (uv pip compile --universal)
+├── requirements-dev.lock    # pinned runtime + dev dependencies
+└── docker-compose*.yml
 ```
 
 ---
 
 ## 📚 In-Depth Documentation
 
-<div align="center">
+The documents in `docs/` were written before the current implementation and describe some
+features that are planned rather than built. Where they disagree with this README or the
+code, the code and this README are correct.
 
 | Document | Description |
 |:---|:---|
-| 📖 [**ARTEF Workflow** (`docs/ARTEF_WORKFLOW.md`)](docs/ARTEF_WORKFLOW.md) | Complete 25-step lifecycle flow with 20+ Mermaid diagrams, viva Q&A, and live execution tracing |
-| 📘 [**Operations Manual** (`docs/COMPLETE_PROJECT.md`)](docs/COMPLETE_PROJECT.md) | Full operational guide, payload schemas, and deployment instructions |
-| 🏛️ [**Architecture Guide** (`docs/PROJECT_GUIDE.md`)](docs/PROJECT_GUIDE.md) | Component breakdown, design patterns, and reliability circuits |
-| 🔌 [**REST API Docs** (`docs/api.md`)](docs/api.md) | Full parameter tables, curl commands, and status code matrices |
-| 💾 [**Database Schema** (`docs/database.md`)](docs/database.md) | Tables, relationships, indexing strategies, and migrations |
-| 🔒 [**Security & Threat Model** (`docs/security.md`)](docs/security.md) | STRIDE threat modeling, RBAC matrices, and cryptographic auditing |
-| 📋 [**Architecture Decision Records** (`docs/adr/`)](docs/adr/README.md) | Documented justifications for all foundational engineering choices |
-
-</div>
+| [`docs/architecture.md`](docs/architecture.md) | Architecture overview |
+| [`docs/database.md`](docs/database.md) | Tables and relationships |
+| [`docs/security.md`](docs/security.md) | Threat model and RBAC |
+| [`docs/adr/`](docs/adr/README.md) | Architecture decision records |
 
 ---
 
-## 🧪 Testing & Quality Assurance
-
-ARTEF maintains strict test coverage across **unit**, **integration**, and **security regression** vectors:
+## 🧪 Testing
 
 ```bash
-# ① Backend unit & integration tests
-cd backend
-pytest -v --cov=app --cov-report=term-missing
+# Backend: unit + integration (real API, SQLite, eager Celery, HTTP demo agents). No setup needed.
+pytest backend/tests -q
 
-# ② Seeded regression benchmark gate
-python scripts/run_seeded_regression.py
+# Only the seeded-regression scenario (PRD primary metric)
+pytest backend/tests/integration/test_pipeline.py -v
 
-# ③ Frontend unit & component tests
-cd frontend
-npm test
-
-# ④ TypeScript type safety check
-npm run type-check
+# Frontend (from frontend/)
+pnpm typecheck && pnpm test && pnpm build
 ```
+
+What is mocked: in the default `EVAL_MODE=local`, tests that use an **LLM rubric** are
+scored by a deterministic stand-in instead of a real judge model. Deterministic matchers
+(refusal, regex, keyword, exact) never call an LLM. Real LLM judging needs
+`EVAL_MODE=live` and `PRIMARY_JUDGE_API_KEY` (and optionally the secondary judge), and is
+not exercised by the automated tests.
 
 ---
 
 ## 👨‍💻 Project Scope & Authorship
 
-> This project was individually designed, developed, and documented as part of an **On-the-Job Training (OJT) Program**.
+> This project was designed, developed, and documented by a two-person team as part of an **On-the-Job Training (OJT) Program**.
 
 <div align="center">
 
 | Field | Detail |
 |:---|:---|
-| **Developer** | Nitesh Singh |
-| **GitHub** | [@BYTEZEN-11](https://github.com/BYTEZEN-11) |
-| **Project Type** | On-the-Job Training (OJT) — Individual Project |
+| **Developers** | Harish R S, Nitesh Singh |
+| **GitHub** | [@Harishrs2006](https://github.com/Harishrs2006), [@BYTEZEN-11](https://github.com/BYTEZEN-11) |
+| **Project Type** | On-the-Job Training (OJT) — Team Project |
 | **Project Title** | Agent Red-Teaming & Evaluation Framework (ARTEF) |
 | **Year** | 2026 |
 | **Scope** | Full-stack production system — FastAPI Backend, Next.js 14 Frontend, RBAC Auth, CI/CD Safety Gate, Human Review Queue, Adversarial Red-Teaming Engine |
 
 </div>
 
-> All design decisions, architecture choices, implementation, testing, and documentation were independently executed by **Nitesh Singh** as part of the OJT evaluation deliverable.
+> Design, implementation, testing, and documentation were carried out by **Harish R S** and **Nitesh Singh** as part of the OJT evaluation deliverable.
 
 ---
 
@@ -594,6 +581,7 @@ See [LICENSE](LICENSE) for full terms.
 *Copyright © 2026 **Nitesh Singh** — OJT Project: Agent Red-Teaming & Evaluation Framework*
 
 [![GitHub](https://img.shields.io/badge/GitHub-NETIZEN--11%2FARTEF-181717.svg?style=flat-square&logo=github)](https://github.com/NETIZEN-11/ARTEF)
+[![Author](https://img.shields.io/badge/Author-Harishrs2006-FF6B6B.svg?style=flat-square&logo=github)](https://github.com/Harishrs2006)
 [![Author](https://img.shields.io/badge/Author-BYTEZEN--11-FF6B6B.svg?style=flat-square&logo=github)](https://github.com/BYTEZEN-11)
 
 </div>

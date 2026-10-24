@@ -1,136 +1,46 @@
 import asyncio
-from datetime import datetime
 from uuid import UUID
 
 from celery import shared_task
 
-from app.core.config import get_settings
-from app.core.database import get_async_session
+from app.core.database import create_task_session_maker
 from app.core.logging import get_logger
-from app.domain.enums import RunStatus
-from app.evaluation.cost.cost_tracker import CostTracker
-from app.evaluation.gate.evaluator import GateEvaluator
-from app.evaluation.regression.detector import RegressionDetector
-from app.evaluation.severity.classifier import SeverityClassifier
-from app.repositories.agents import TargetAgentRepository
-from app.repositories.baselines import (
-    BaselineItemRepository,
-    BaselineRepository,
-    RegressionRepository,
-    ReviewQueueRepository,
+from app.services.pipeline_service import (
+    EvaluationPipeline,
+    get_scoring_service_class,
+    mark_run_failed,
 )
-from app.repositories.runs import ExecutionRepository, ResultRepository, RunRepository
-from app.repositories.suites import TestCaseRepository
-from app.services.execution_service import ExecutionService
-from app.services.scoring_service import MockScoringService, ScoringService
 
-settings = get_settings()
 logger = get_logger(__name__)
 
 
 def get_scoring_service():
-    if settings.EVAL_MODE == "local" or settings.DEV_MOCK_JUDGE:
-        return MockScoringService
-    return ScoringService
+    return get_scoring_service_class()
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def run_evaluation(self, run_id: str):
-    run_uuid = UUID(run_id)
-    logger.info("evaluation_task_started", run_id=run_id)
-
-    async def _run():
-        async with get_async_session() as session:
-            run_repo = RunRepository(session)
-            execution_repo = ExecutionRepository(session)
-            result_repo = ResultRepository(session)
-            agent_repo = TargetAgentRepository(session)
-            case_repo = TestCaseRepository(session)
-            baseline_repo = BaselineRepository(session)
-            baseline_item_repo = BaselineItemRepository(session)
-            regression_repo = RegressionRepository(session)
-            review_repo = ReviewQueueRepository(session)
-            cost_tracker = CostTracker()
-
-            run = await run_repo.get(run_uuid)
-            if not run:
-                logger.error("run_not_found", run_id=run_id)
-                return
-
+async def _evaluate(run_uuid: UUID) -> str | None:
+    task_engine, session_maker = create_task_session_maker()
+    try:
+        async with session_maker() as session:
             try:
-                execution_service = ExecutionService(
-                    run_repo, execution_repo, result_repo, agent_repo, case_repo
-                )
-                await execution_service.execute_run(run_uuid)
-
-                limits = cost_tracker.check_limits(run.total_cost_usd, 0)
-                if limits["run_limit_exceeded"]:
-                    run.status = RunStatus.FAILED
-                    run.error_message = f"Run cost limit exceeded: ${run.total_cost_usd:.2f} > ${settings.COST_PER_RUN_LIMIT_USD:.2f}"
-                    run.completed_at = datetime.utcnow()
-                    await session.flush()
-                    logger.warning("run_cost_limit_exceeded", run_id=run_id, cost=run.total_cost_usd)
-                    return
-
-                ScoringServiceClass = get_scoring_service()
-                scoring_service = ScoringServiceClass(execution_repo, result_repo, case_repo)
-                await scoring_service.score_run(run_uuid)
-
-                run = await run_repo.get(run_uuid)
-                limits = cost_tracker.check_limits(run.total_cost_usd, 0)
-                if limits["run_limit_exceeded"]:
-                    run.status = RunStatus.FAILED
-                    run.error_message = f"Run cost limit exceeded: ${run.total_cost_usd:.2f} > ${settings.COST_PER_RUN_LIMIT_USD:.2f}"
-                    run.completed_at = datetime.utcnow()
-                    await session.flush()
-                    logger.warning("run_cost_limit_exceeded", run_id=run_id, cost=run.total_cost_usd)
-                    return
-
-                baseline = await baseline_repo.get_active_for_suite(run.suite_id)
-                if baseline and settings.REGRESSION_DETECTION_ENABLED:
-                    detector = RegressionDetector(
-                        result_repo, baseline_repo, baseline_item_repo, regression_repo
-                    )
-                    findings = await detector.detect_regressions(run_uuid, baseline.id)
-
-                    classifier = SeverityClassifier(case_repo)
-                    for finding in findings:
-                        classification = await classifier.classify(finding)
-                        finding.severity = classification.level
-
-                    gate_evaluator = GateEvaluator(run_repo, result_repo, regression_repo)
-                    gate_result = await gate_evaluator.evaluate(run_uuid)
-
-                    if gate_result.decision in ("BLOCK", "FAIL"):
-                        for finding in findings:
-                            if finding.severity.value in ("critical", "high"):
-                                regression = await regression_repo.get_by_run_and_test_case(
-                                    run_uuid, finding.test_case_id
-                                )
-                                if not regression:
-                                    continue
-                                review = await review_repo.create_review(
-                                    regression_id=regression.id,
-                                    run_id=run_uuid,
-                                    severity=finding.severity,
-                                    confidence=0.8,
-                                    category="regression",
-                                )
-                                logger.info("review_created", review_id=str(review.id))
-
-                logger.info("evaluation_task_completed", run_id=run_id)
-
+                gate_result = await EvaluationPipeline(session).run(run_uuid)
+                return gate_result.decision if gate_result else None
             except Exception as e:
-                logger.error("evaluation_task_failed", run_id=run_id, error=str(e))
-                run = await run_repo.get(run_uuid)
-                if run:
-                    run.status = RunStatus.FAILED
-                    run.error_message = str(e)
-                    run.completed_at = datetime.utcnow()
-                    await session.flush()
-                raise
+                logger.exception("evaluation_task_failed", run_id=str(run_uuid), error=str(e))
+                await session.rollback()
+                await mark_run_failed(session, run_uuid, f"Pipeline error: {e}")
+                return None
+    finally:
+        await task_engine.dispose()
 
-    asyncio.run(_run())
+
+@shared_task(bind=True)
+def run_evaluation(self, run_id: str):
+    """Run the full pipeline for one run. Not auto-retried: a retry would duplicate results."""
+    logger.info("evaluation_task_started", run_id=run_id)
+    decision = asyncio.run(_evaluate(UUID(run_id)))
+    logger.info("evaluation_task_finished", run_id=run_id, gate_decision=decision)
+    return decision
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=30)

@@ -209,7 +209,7 @@ function LoginForm() {
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground">
-            ARTEF — Agent Red-Teaming Framework • OJT 2026 by Nitesh Singh
+            ARTEF — Agent Red-Teaming Framework • OJT 2026 by Harish R S & Nitesh Singh
           </p>
         </div>
       </div>

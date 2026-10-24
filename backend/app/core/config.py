@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     CELERY_TASK_TRACK_STARTED: bool = True
     CELERY_TASK_TIME_LIMIT: int = 1800
     CELERY_WORKER_PREFETCH_MULTIPLIER: int = 4
+    # true = run tasks in the API process (no Redis/worker needed). Local dev and tests only.
+    CELERY_TASK_ALWAYS_EAGER: bool = False
 
     PRIMARY_JUDGE_PROVIDER: str = "openai"
     PRIMARY_JUDGE_MODEL: str = "gpt-4o-2024-08-06"

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Shield, Server, Activity, Zap, FileText, Loader2 } from "lucide-react";
@@ -20,13 +21,16 @@ export default function SecurityPage() {
   const [modelPath, setModelPath] = useState("./models");
   const [dashboard, setDashboard] = useState<any>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<any>(null);
-  const [benchmarking, setBenchmarking] = useState(false);
+  const [benchmarking, setBenchmarking] = useState<string | null>(null);
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
+  const [agentId, setAgentId] = useState("");
 
   const fetchDashboard = useCallback(async () => {
     try {
       const res = await api.get("/security/security-dashboard").catch(() => api.get("/monitoring/dashboard").catch(() => ({ data: null })));
       setDashboard(res.data);
     } catch {}
+    api.get("/agents").then((res) => setAgents(res.data)).catch(() => setAgents([]));
   }, []);
 
   useEffect(() => {
@@ -45,13 +49,14 @@ export default function SecurityPage() {
   };
 
   const runBenchmark = async (type: string) => {
-    setBenchmarking(true);
+    setBenchmarking(type);
+    setBenchmarkResult(null);
     try {
-      const res = await api.post(`/security/run-benchmark?benchmark_type=${type}`);
+      const res = await api.post("/security/run-benchmark", null, { params: { benchmark_type: type, agent_id: agentId } });
       setBenchmarkResult(res.data);
     } catch (e: any) {
       setBenchmarkResult({ error: e.response?.data?.detail || e.message });
-    } finally { setBenchmarking(false); }
+    } finally { setBenchmarking(null); }
   };
 
   if (!ready || !authenticated) return <DashboardLayout><div className="flex h-[calc(100vh-4rem)] items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div></DashboardLayout>;
@@ -98,16 +103,45 @@ export default function SecurityPage() {
 
           <TabsContent value="benchmark">
             <Card>
-              <CardHeader><CardTitle>Foundation Model Benchmarks</CardTitle></CardHeader>
+              <CardHeader><CardTitle>Benchmarks</CardTitle></CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Target agent</Label>
+                  <Select value={agentId} onValueChange={setAgentId}>
+                    <SelectTrigger><SelectValue placeholder={agents.length ? "Select an agent" : "No agents registered"} /></SelectTrigger>
+                    <SelectContent>
+                      {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {["safety", "jailbreak", "prompt_injection", "pii", "smoke", "regression"].map((b) => (
-                    <Button key={b} variant="outline" onClick={() => runBenchmark(b)} disabled={benchmarking}>{benchmarking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{b.replace("_", " ")}</Button>
+                    <Button key={b} variant="outline" onClick={() => runBenchmark(b)} disabled={!agentId || benchmarking !== null}>{benchmarking === b ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{b.replace("_", " ")}</Button>
                   ))}
                 </div>
-                <Button onClick={() => runBenchmark("safety")} disabled={benchmarking} className="w-full">Run Safety Benchmark</Button>
-                {benchmarkResult && <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">{JSON.stringify(benchmarkResult, null, 2)}</pre>}
-                {!benchmarkResult && <div className="text-center py-8 text-muted-foreground"><Zap className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>Benchmarks mirror promptfoo&apos;s LLM evaluation — safety, factuality, RAG</p></div>}
+                {benchmarkResult?.error && <p className="text-sm text-red-600">{String(benchmarkResult.error)}</p>}
+                {benchmarkResult && !benchmarkResult.error && (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{benchmarkResult.benchmark_type.replace("_", " ")}</span> on {benchmarkResult.agent} — {benchmarkResult.total} tests</p>
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      <div className="rounded border p-2"><div className="text-xl font-bold text-green-600">{benchmarkResult.passed}</div><div className="text-xs text-muted-foreground">Passed</div></div>
+                      <div className="rounded border p-2"><div className="text-xl font-bold text-red-600">{benchmarkResult.failed}</div><div className="text-xs text-muted-foreground">Failed</div></div>
+                      <div className="rounded border p-2"><div className="text-xl font-bold text-yellow-600">{benchmarkResult.inconclusive}</div><div className="text-xs text-muted-foreground">Inconclusive</div></div>
+                      <div className="rounded border p-2"><div className="text-xl font-bold">{Math.round(benchmarkResult.pass_rate * 100)}%</div><div className="text-xs text-muted-foreground">Pass rate</div></div>
+                    </div>
+                    {benchmarkResult.findings.length > 0 && (
+                      <div className="space-y-1">
+                        {benchmarkResult.findings.map((f: any) => (
+                          <div key={f.test_case_id} className="flex items-start gap-2 rounded border p-2 text-sm">
+                            <Badge variant={f.verdict === "FAIL" ? "destructive" : "secondary"}>{f.verdict}</Badge>
+                            <div><span className="font-mono">{f.test_case_id}</span> <span className="text-muted-foreground">({f.severity})</span><div className="text-xs text-muted-foreground">{f.detail}</div></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {!benchmarkResult && <div className="text-center py-8 text-muted-foreground"><Zap className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>Pick an agent, then a benchmark. Each test in the suite is sent to the agent and checked with the same deterministic matchers as evaluation runs.</p></div>}
               </CardContent>
             </Card>
           </TabsContent>

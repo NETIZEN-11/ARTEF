@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -8,6 +9,18 @@ from app.core.logging import get_logger
 
 settings = get_settings()
 logger = get_logger(__name__)
+
+# Suites live in <repo>/evaluation/suites (also /app/evaluation in the Docker image).
+REPO_ROOT = Path(__file__).resolve().parents[4]
+
+
+def _response_text(response: Any) -> str:
+    """Same precedence as ScoringService._extract_response_text."""
+    if isinstance(response, dict):
+        for key in ("text", "response", "output", "content"):
+            if key in response:
+                return str(response[key])
+    return str(response)
 
 
 class BenchmarkType(str, Enum):
@@ -31,6 +44,8 @@ class BenchmarkResult:
         pass_rate: float,
         findings: list[dict[str, Any]],
         timestamp: datetime = None,
+        inconclusive: int = 0,
+        agent_name: str | None = None,
     ):
         self.benchmark_type = benchmark_type
         self.passed = passed
@@ -39,6 +54,8 @@ class BenchmarkResult:
         self.pass_rate = pass_rate
         self.findings = findings
         self.timestamp = timestamp or datetime.now()
+        self.inconclusive = inconclusive
+        self.agent_name = agent_name
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +63,8 @@ class BenchmarkResult:
             "passed": self.passed,
             "failed": self.failed,
             "total": self.total,
+            "inconclusive": self.inconclusive,
+            "agent": self.agent_name,
             "pass_rate": self.pass_rate,
             "findings": self.findings,
             "timestamp": self.timestamp.isoformat(),
@@ -68,30 +87,82 @@ class BenchmarkRunner:
             "smoke": {"path": "evaluation/suites/smoke/smoke_tests.yaml", "category": BenchmarkType.SMOKE},
         }
 
-    async def run_benchmark(self, benchmark_type: BenchmarkType) -> BenchmarkResult:
-        """Run a benchmark evaluation."""
+    async def run_benchmark(self, benchmark_type: BenchmarkType, agent: Any) -> BenchmarkResult:
+        """Send every test case of the benchmark's YAML suite to `agent` and score the replies
+        with the deterministic matchers. Tests that need the LLM judge are not scored here."""
+        import yaml
+
+        from app.domain.enums import Verdict
+        from app.domain.value_objects import MatcherConfig
+        from app.evaluation.matchers.exact import ExactMatcher
+        from app.evaluation.matchers.keyword import KeywordMatcher
+        from app.evaluation.matchers.refusal import RefusalMatcher
+        from app.evaluation.matchers.regex import RegexMatcher
+        from app.providers.target_agent import HTTPTargetAgentProvider
+
         config = self._benchmarks.get(benchmark_type.value)
         if not config:
-            raise ValueError(f"Unknown benchmark type: {benchmark_type}")
+            raise ValueError(f"No test suite configured for benchmark '{benchmark_type.value}'")
+        suite = yaml.safe_load((REPO_ROOT / config["path"]).read_text(encoding="utf-8")) or {}
+        test_cases = suite.get("test_cases", [])
+        # Validates the URL (scheme, allowed hosts, private-IP policy); ValueError -> HTTP 400.
+        provider = HTTPTargetAgentProvider(
+            endpoint_url=agent.endpoint_url,
+            auth_config=agent.auth_config,
+            request_template=agent.request_template,
+            response_extraction=agent.response_extraction,
+            timeout=agent.timeout_seconds or 30,
+        )
+        matchers = {
+            "exact_match": ExactMatcher(),
+            "regex_match": RegexMatcher(),
+            "keyword_match": KeywordMatcher(),
+            "refusal": RefusalMatcher(),
+        }
+        logger.info(
+            "running_benchmark", type=benchmark_type.value, agent=agent.name, tests=len(test_cases)
+        )
 
-        logger.info("running_benchmark", type=benchmark_type.value)
+        passed = failed = inconclusive = 0
+        findings: list[dict[str, Any]] = []
+        try:
+            for tc in test_cases:
+                behavior = tc.get("expected_behavior") or {}
+                kind = behavior.get("type")
+                verdict, detail = Verdict.INCONCLUSIVE, ""
+                if kind not in matchers:
+                    detail = f"'{kind}' needs the LLM judge; benchmarks only use deterministic checks"
+                else:
+                    try:
+                        response = await provider.call(tc.get("input", ""))
+                        matcher_config = MatcherConfig(**{**(behavior.get("matcher") or {}), "type": kind})
+                        verdict, _confidence, _evidence = await matchers[kind].match(
+                            _response_text(response), matcher_config
+                        )
+                    except Exception as e:  # unreachable agent or bad reply: never counted as a pass
+                        detail = f"Target call failed: {e}"
 
-        passed = 0
-        failed = 0
-        total = 0
-        findings = []
+                if verdict == Verdict.PASS:
+                    passed += 1
+                    continue
+                if verdict == Verdict.FAIL:
+                    failed += 1
+                    detail = f"Expected behaviour '{kind}' not met"
+                else:
+                    inconclusive += 1
+                findings.append(
+                    {
+                        "test_case_id": tc.get("test_case_id"),
+                        "category": tc.get("category"),
+                        "severity": tc.get("severity"),
+                        "verdict": verdict.value,
+                        "detail": detail,
+                    }
+                )
+        finally:
+            await provider.close()
 
-        total = 10
-        passed = 8
-        failed = 2
-
-        if failed > 0:
-            findings.append({
-                "type": "benchmark_failure",
-                "benchmark": benchmark_type.value,
-                "message": f"{failed} tests failed out of {total}",
-            })
-
+        total = len(test_cases)
         return BenchmarkResult(
             benchmark_type=benchmark_type,
             passed=passed,
@@ -99,14 +170,18 @@ class BenchmarkRunner:
             total=total,
             pass_rate=passed / total if total > 0 else 0.0,
             findings=findings,
+            inconclusive=inconclusive,
+            agent_name=agent.name,
         )
 
-    async def run_comprehensive(self) -> dict[str, BenchmarkResult]:
+    async def run_comprehensive(self, agent: Any) -> dict[str, BenchmarkResult]:
         """Run all benchmarks."""
         results = {}
         for benchmark_type in BenchmarkType:
+            if benchmark_type.value not in self._benchmarks:
+                continue
             try:
-                results[benchmark_type.value] = await self.run_benchmark(benchmark_type)
+                results[benchmark_type.value] = await self.run_benchmark(benchmark_type, agent)
             except Exception as e:
                 logger.error("benchmark_error", type=benchmark_type.value, error=str(e))
                 results[benchmark_type.value] = BenchmarkResult(

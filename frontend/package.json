@@ -1,8 +1,8 @@
 {
   "name": "redteam-frontend",
   "version": "1.0.0",
-  "description": "ARTEF Frontend — OJT Project by Nitesh Singh, 2026",
-  "author": "Nitesh Singh",
+  "description": "ARTEF Frontend — OJT Project by Harish R S & Nitesh Singh, 2026",
+  "author": "Harish R S & Nitesh Singh",
   "private": true,
   "scripts": {
     "dev": "next dev",

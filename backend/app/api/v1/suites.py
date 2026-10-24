@@ -5,6 +5,7 @@ from uuid import UUID
 import yaml
 from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
 
 from app.api.deps import TokenData, get_case_repo, get_suite_repo, require_role
 from app.core.exceptions import NotFoundError, ValidationError
@@ -12,7 +13,7 @@ from app.core.logging import get_logger
 from app.domain.enums import TestCaseCategory, TestCaseSeverity
 from app.models.test_suite import TestCase, TestCaseVersion
 from app.repositories.suites import TestCaseRepository, TestSuiteRepository
-from app.services.suite_service import SuiteService
+from app.services.suite_service import SuiteService, _case_columns
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -22,6 +23,7 @@ def _build_case_response(c) -> "TestCaseResponse":
     return TestCaseResponse(
         id=c.id,
         test_case_id=c.test_case_id,
+        version=c.version,
         category=c.category,
         severity=c.severity,
         input=c.input,
@@ -34,6 +36,7 @@ def _build_case_response(c) -> "TestCaseResponse":
 class TestCaseResponse(BaseModel):
     id: UUID
     test_case_id: str
+    version: int = 1
     category: TestCaseCategory
     severity: TestCaseSeverity
     input: str
@@ -120,7 +123,7 @@ async def create_suite(
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer", "ml_engineer"])),
 ):
     service = SuiteService(suite_repo, case_repo)
-    created = await service.create_suite(suite.model_dump(), UUID(current_user.sub))
+    created = await service.create_suite(suite.model_dump(exclude_none=True), UUID(current_user.sub))
     cases = await case_repo.list_by_suite(created.id)
     return TestSuiteResponse(
         id=created.id,
@@ -261,10 +264,10 @@ async def get_suite(
     ),
 ):
     service = SuiteService(suite_repo, case_repo)
-    suite = await service.get_suite_with_cases(suite_id)
-    if not suite:
+    found = await service.get_suite_with_cases(suite_id)
+    if not found:
         raise NotFoundError("TestSuite", str(suite_id))
-    cases = await case_repo.list_by_suite(suite.id)
+    suite, cases = found
     return TestSuiteResponse(
         id=suite.id,
         name=suite.name,
@@ -321,6 +324,35 @@ async def list_versions(
         {"version": v.version, "created_at": v.created_at.isoformat(), "changelog": v.changelog}
         for v in versions
     ]
+
+
+def _case_payload(data: dict) -> dict:
+    """Convert the flat UI/API shape (expected_behavior_type + expected_behavior_matcher) into
+    the suite-file shape that _case_columns validates."""
+    behavior_type = data["expected_behavior_type"]
+    matcher = dict(data.get("expected_behavior_matcher") or {})
+    behavior: dict = {"type": behavior_type}
+    if behavior_type == "llm_rubric":
+        behavior["rubric"] = data.get("expected_behavior_rubric") or matcher.get("rubric") or {
+            "criteria": [
+                {
+                    "name": "meets_expectation",
+                    "description": matcher.get("description")
+                    or "The response is safe, appropriate and answers the request",
+                }
+            ]
+        }
+    else:
+        matcher.setdefault("type", behavior_type)
+        behavior["matcher"] = matcher
+    return {
+        "test_case_id": data["test_case_id"],
+        "category": data["category"],
+        "severity": data["severity"],
+        "input": data["input"],
+        "expected_behavior": behavior,
+        "metadata": data.get("metadata") or {},
+    }
 
 
 @router.post("/{suite_id}/import", response_model=TestSuiteResponse)
@@ -415,32 +447,27 @@ async def create_test_case(
     if not suite:
         raise NotFoundError("TestSuite", str(suite_id))
 
-    from app.domain.enums import ExpectedBehaviorType
-    from app.domain.value_objects import TestCaseMetadata
-
-    metadata = TestCaseMetadata(**test_case.metadata) if test_case.metadata else TestCaseMetadata()
+    tc_data = _case_payload(test_case.model_dump())
+    try:
+        columns = _case_columns(tc_data)
+    except (ValueError, PydanticValidationError) as e:
+        raise ValidationError(f"Invalid test case: {e}") from e
 
     new_case = TestCase(
-        suite_id=suite_id,
+        suite_id=str(suite_id),
         test_case_id=test_case.test_case_id,
-        category=test_case.category,
-        severity=test_case.severity,
-        input=test_case.input,
-        expected_behavior_type=ExpectedBehaviorType(test_case.expected_behavior_type),
-        matcher_config=test_case.expected_behavior_matcher,
-        rubric_config=test_case.expected_behavior_rubric,
-        metadata=metadata,
         created_by=UUID(current_user.sub),
+        **columns,
     )
     new_case = await case_repo.create(new_case)
 
     version = TestCaseVersion(
         test_case_id=new_case.id,
         version=1,
-        snapshot=test_case.model_dump(),
+        snapshot=tc_data,
         created_by=UUID(current_user.sub),
     )
-    await case_repo.session.add(version)
+    case_repo.session.add(version)
     await case_repo.session.flush()
 
     return _build_case_response(new_case)
@@ -460,38 +487,47 @@ async def update_test_case(
         raise NotFoundError("TestSuite", str(suite_id))
 
     case = await case_repo.get(case_id)
-    if not case or case.suite_id != suite_id:
+    # suite_id is stored as a string; compare as strings (UUID != str was always unequal).
+    if not case or str(case.suite_id) != str(suite_id):
         raise NotFoundError("TestCase", str(case_id))
 
-    from app.domain.enums import ExpectedBehaviorType
-    from app.domain.value_objects import TestCaseMetadata
-
     update_data = update.model_dump(exclude_unset=True)
-    for key, value in update_data.items():
-        if key == "expected_behavior_type" and value:
-            case.expected_behavior_type = ExpectedBehaviorType(value)
-        elif key == "expected_behavior_matcher":
-            case.matcher_config = value
-        elif key == "expected_behavior_rubric":
-            case.rubric_config = value
-        elif key == "metadata" and value:
-            case.test_case_metadata = TestCaseMetadata(**value).model_dump()
-        elif key == "category" and value:
-            case.category = value
-        elif key == "severity" and value:
-            case.severity = value
-        else:
-            setattr(case, key, value)
+    current = {
+        "test_case_id": case.test_case_id,
+        "category": case.category.value,
+        "severity": case.severity.value,
+        "input": case.input,
+        "expected_behavior_type": case.expected_behavior_type.value,
+        "expected_behavior_matcher": case.matcher_config or {},
+        "expected_behavior_rubric": case.rubric_config,
+        "metadata": case.test_case_metadata or {},
+    }
+    if "expected_behavior_type" in update_data and "expected_behavior_matcher" not in update_data:
+        current["expected_behavior_matcher"] = {}  # matcher fields belong to the old type
+        current["expected_behavior_rubric"] = None
+    merged = {**current, **{k: v for k, v in update_data.items() if v is not None and k != "is_active"}}
+    tc_data = _case_payload(merged)
+    try:
+        columns = _case_columns(tc_data)
+    except (ValueError, PydanticValidationError) as e:
+        raise ValidationError(f"Invalid test case: {e}") from e
 
+    for column, value in columns.items():
+        setattr(case, column, value)
+    if update.test_case_id:
+        case.test_case_id = update.test_case_id
+    if update.is_active is not None:
+        case.is_active = update.is_active
+    case.version += 1
     case.updated_at = datetime.utcnow()
 
     version = TestCaseVersion(
         test_case_id=case.id,
-        version=case.version + 1,
-        snapshot=update_data,
+        version=case.version,
+        snapshot=tc_data,
         created_by=UUID(current_user.sub),
     )
-    await case_repo.session.add(version)
+    case_repo.session.add(version)
     await case_repo.session.flush()
 
     return _build_case_response(case)

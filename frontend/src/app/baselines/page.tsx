@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-import { api } from "@/lib/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { api, handleApiError } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Eye, Check, X, Trash2, RefreshCw } from "lucide-react";
@@ -97,6 +97,7 @@ export default function BaselinesPage() {
       fetchBaselines();
     } catch (error) {
       console.error("Failed to delete baseline:", error);
+      alert(handleApiError(error));
     }
   };
 

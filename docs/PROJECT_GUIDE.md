@@ -1,3 +1,5 @@
+> **Status note (October 2026):** this document was written as the original design and describes some features that are planned rather than implemented (for example cryptographically sealed baselines, SSO/OIDC login, LLM-generated adversarial prompts and RAG grounding). For what ARTEF actually does today, and how to run it, see the [README](../README.md); the code and tests are authoritative.
+
 # Agent Red-Teaming & Evaluation Framework: Master Architecture & Project Guide
 
 A continuous-assurance platform that evaluates AI/LLM agents against deterministic and adversarial test cases, detects safety/behavioral regressions against approved historical baselines, classifies severity, produces evidence-rich reports, routes uncertain findings to human reviewers, and provides a deterministic CI gate capable of blocking a merge/deployment.
@@ -420,7 +422,7 @@ flowchart TD
 
 ### SQLite Compatibility Layer
 
-Located in [`backend/app/core/sqlite_compat.py`](file:///c:/Users/Nitesh-PC/Desktop/PRO/ARTF/agent-redteam-framework/backend/app/core/sqlite_compat.py):
+Located in [`backend/app/core/sqlite_compat.py`](../backend/app/core/sqlite_compat.py):
 1. **PostgreSQL JSONB Compatibility**: Maps `JSONB` and dialect-specific JSON operators to SQLite `JSON` or text serialisation.
 2. **UUID Support**: Registers native Python `uuid.UUID` converters to string for SQLite drivers.
 3. **Foreign Key Enforcement**: Hooks into `connect` event to execute `PRAGMA foreign_keys = ON;`.

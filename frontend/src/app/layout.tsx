@@ -7,8 +7,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ARTEF — OJT Project | Nitesh Singh",
-  description: "Agent Red-Teaming Framework (ARTEF) — OJT Project by Nitesh Singh (2026). Continuous assurance platform for AI/LLM agent evaluation.",
+  title: "ARTEF — OJT Project | Harish R S & Nitesh Singh",
+  description: "Agent Red-Teaming Framework (ARTEF) — OJT Project by Harish R S & Nitesh Singh (2026). Continuous assurance platform for AI/LLM agent evaluation.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
+import { api, handleApiError } from "@/lib/api";
 import { formatDate, formatDuration, formatCost, getSeverityColor } from "@/lib/utils";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useParams } from "next/navigation";
@@ -40,7 +40,18 @@ interface RunDetail {
   completed_at: string | null;
   created_at: string;
   error_message: string | null;
+  gate_decision: "PASS" | "WARN" | "FAIL" | "BLOCK" | null;
+  gate_summary: string | null;
 }
+
+const FINISHED_STATUSES = ["completed", "review_required", "failed", "cancelled"];
+
+const GATE_STYLES: Record<string, { label: string; className: string }> = {
+  PASS: { label: "PASS - safe to release", className: "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400" },
+  WARN: { label: "WARN - non-blocking regressions", className: "border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400" },
+  FAIL: { label: "FAIL - gate cannot pass", className: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400" },
+  BLOCK: { label: "BLOCK - release blocked", className: "border-red-600/60 bg-red-600/15 text-red-700 dark:text-red-400" },
+};
 
 interface ResultDetail {
   id: string;
@@ -75,6 +86,31 @@ export default function RunDetailPage() {
   const [run, setRun] = useState<RunDetail | null>(null);
   const [results, setResults] = useState<ResultDetail[]>([]);
   const [regressions, setRegressions] = useState<RegressionDetail[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  const [approving, setApproving] = useState(false);
+
+  // A finished run with a definite verdict for every test can become the suite's baseline
+  // (the API enforces the same rule and replaces the previous baseline).
+  const approveAsBaseline = async () => {
+    if (!run) return;
+    if (!confirm("Approve this run as the known-good baseline for its suite? Later runs will be compared against it.")) return;
+    setApproving(true);
+    try {
+      await api.post("/baselines/", {
+        suite_id: run.suite_id,
+        suite_version: run.suite_version,
+        run_id: run.id,
+        name: `Baseline from run ${run.id.slice(0, 8)}`,
+      });
+      alert("Baseline approved. New runs of this suite are now compared against it.");
+      fetchData();
+    } catch (error) {
+      alert(`Could not approve baseline: ${handleApiError(error)}`);
+    } finally {
+      setApproving(false);
+    }
+  };
 
   const fetchData = useCallback(async () => {
     try {
@@ -88,8 +124,17 @@ export default function RunDetailPage() {
       setRegressions(regsRes.data);
     } catch (error) {
       console.error("Failed to fetch run detail:", error);
+    } finally {
+      setLoaded(true);
     }
   }, [runId]);
+
+  // Poll while the pipeline is still working so status and results update live.
+  useEffect(() => {
+    if (!run || FINISHED_STATUSES.includes(run.status)) return;
+    const timer = setInterval(fetchData, 2000);
+    return () => clearInterval(timer);
+  }, [run, fetchData]);
 
   useEffect(() => {
     if (!ready || !authenticated) return;
@@ -127,7 +172,12 @@ export default function RunDetailPage() {
               <p className="text-muted-foreground">{run.id}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {["completed", "review_required"].includes(run.status) && run.inconclusive_count === 0 && (
+              <Button variant="outline" size="sm" onClick={approveAsBaseline} disabled={approving}>
+                {approving ? "Approving..." : "Approve as baseline"}
+              </Button>
+            )}
             <Badge variant={
               run.status === "completed" ? "default" :
               run.status === "failed" ? "destructive" :
@@ -141,6 +191,20 @@ export default function RunDetailPage() {
             </Badge>
           </div>
         </div>
+
+        {run.gate_decision ? (
+          <div className={`rounded-lg border p-4 ${GATE_STYLES[run.gate_decision]?.className ?? ""}`}>
+            <div className="text-xs font-medium uppercase tracking-wide opacity-80">CI gate decision</div>
+            <div className="text-xl font-bold">{GATE_STYLES[run.gate_decision]?.label ?? run.gate_decision}</div>
+            {run.gate_summary && <p className="mt-1 text-sm">{run.gate_summary}</p>}
+          </div>
+        ) : (
+          !FINISHED_STATUSES.includes(run.status) && (
+            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+              Pipeline in progress ({run.status.replace("_", " ")}). This page refreshes automatically.
+            </div>
+          )
+        )}
 
         <div className="grid gap-4 md:grid-cols-4">
           <Card><CardContent><div className="text-2xl font-bold">{run.total_tests}</div><p className="text-sm text-muted-foreground">Total Tests</p></CardContent></Card>

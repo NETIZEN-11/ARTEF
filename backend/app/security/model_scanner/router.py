@@ -88,14 +88,19 @@ async def security_dashboard(
 @router.post("/run-benchmark")
 async def run_benchmark(
     benchmark_type: str,
+    agent_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer"])),
 ):
-    """Run a benchmark evaluation."""
+    """Run a benchmark's YAML suite against a registered target agent."""
     from app.evaluation.benchmark import BenchmarkType, benchmark_runner
+    from app.repositories.agents import TargetAgentRepository
 
+    agent = await TargetAgentRepository(db).get(agent_id)
+    if agent is None:
+        raise HTTPException(status_code=404, detail="Target agent not found")
     try:
-        result = await benchmark_runner.run_benchmark(BenchmarkType(benchmark_type))
+        result = await benchmark_runner.run_benchmark(BenchmarkType(benchmark_type), agent)
         return result.to_dict()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

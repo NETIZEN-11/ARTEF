@@ -1,3 +1,5 @@
+> **Status note (October 2026):** this document was written as the original design and describes some features that are planned rather than implemented (for example cryptographically sealed baselines, SSO/OIDC login, LLM-generated adversarial prompts and RAG grounding). For what ARTEF actually does today, and how to run it, see the [README](../README.md); the code and tests are authoritative.
+
 # Agent Red-Teaming & Evaluation Framework: Complete End-to-End Project Manual
 
 > **Document Version**: 1.0.0 (Enterprise Production Edition)  

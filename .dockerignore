@@ -80,8 +80,7 @@ docs/
 README.md
 LICENSE
 
-# Scripts
-scripts/
+# Scripts (scripts/*.py are needed in the backend image, e.g. seed_demo_data.py)
 *.sh
 
 # CI/CD

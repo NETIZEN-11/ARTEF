@@ -53,6 +53,37 @@ class PickleDetector(BaseDetector):
             "threading",
             "commands",
             "popen2",
+            # os.* functions pickle under the platform module name
+            "nt",
+            "posix",
+        }
+        # Callables that execute code or commands, whatever module they come from.
+        self.dangerous_callables = {
+            "system", "popen", "spawn", "spawnl", "spawnv", "execv", "execve",
+            "eval", "exec", "compile", "__import__", "getattr", "apply", "call",
+            "check_call", "check_output", "run", "Popen", "load", "loads",
+        }
+        # Globals that only rebuild plain data (containers, dates, numbers, arrays, tensors).
+        # Any other imported callable runs when the file is loaded, so it is reported too.
+        builtin_types = {"set", "frozenset", "bytearray", "bytes", "complex", "slice", "range",
+                         "list", "dict", "tuple", "str", "int", "float", "bool"}
+        self.safe_globals = {
+            "builtins": builtin_types,
+            "__builtin__": builtin_types,
+            "collections": {"OrderedDict", "defaultdict", "deque", "Counter"},
+            "copyreg": {"_reconstructor"},
+            "copy_reg": {"_reconstructor"},
+            "_codecs": {"encode"},
+            "datetime": {"datetime", "date", "time", "timedelta", "timezone"},
+            "decimal": {"Decimal"},
+            "fractions": {"Fraction"},
+            "uuid": {"UUID"},
+            "numpy": {"ndarray", "dtype"},
+            "numpy.core.multiarray": {"_reconstruct", "scalar"},
+            "numpy._core.multiarray": {"_reconstruct", "scalar"},
+            "torch._utils": {"_rebuild_tensor", "_rebuild_tensor_v2", "_rebuild_parameter"},
+            "torch": {"FloatStorage", "DoubleStorage", "HalfStorage", "LongStorage", "IntStorage",
+                      "ShortStorage", "CharStorage", "ByteStorage", "BoolStorage", "BFloat16Storage"},
         }
 
     async def scan(self, path: Path) -> list[ScanFinding]:
@@ -70,96 +101,63 @@ class PickleDetector(BaseDetector):
         return findings
 
     def _scan_pickle_file(self, file_path: Path) -> list[ScanFinding]:
-        """Statically analyse a pickle file.
+        """Statically inspect pickle opcodes. The file is never unpickled: loading an
+        untrusted pickle executes whatever it imports, which is exactly what we scan for."""
+        import pickletools
 
-        The payload is *never* deserialised: `pickle.load` executes arbitrary
-        code, so loading an untrusted pickle during a security scan would
-        turn the scanner into a remote-code-execution vector. The opcode
-        stream is inspected instead.
-        """
-        findings = []
-
+        findings: list[ScanFinding] = []
         try:
-            import pickletools
-
-            with open(file_path, "rb") as f:
-                data = f.read()
-
-            # Disassemble the opcode stream; this never executes the payload.
-            try:
-                opcodes = list(pickletools.genops(data))
-            except Exception as e:
-                return [
-                    ScanFinding(
-                        detector="pickle_scanner",
-                        finding_type="insecure_deserialization",
-                        severity=SeverityLevel.MEDIUM,
-                        description=f"Malformed pickle opcode stream: {e}",
-                        file_path=str(file_path),
-                        metadata={
-                            "remediation": (
-                                "Remove the pickle file or convert it to a safe format such as JSON."
-                            )
-                        },
-                    )
-                ]
-
-            opcode_names = {opcode.name for opcode, _arg, _pos in opcodes}
-
-            dangerous = {
-                "GLOBAL": "imports an arbitrary global object",
-                "STACK_GLOBAL": "imports an arbitrary global object",
-                "REDUCE": "calls a callable, enabling code execution",
-                "INST": "instantiates a class, enabling code execution",
-                "OBJ": "instantiates a class, enabling code execution",
-                "NEWOBJ": "instantiates a class, enabling code execution",
-                "NEWOBJ_EX": "instantiates a class, enabling code execution",
-                "BUILD": "mutates an object's state",
-                "EXT1": "references an extension registry object",
-                "EXT2": "references an extension registry object",
-                "EXT4": "references an extension registry object",
-            }
-
-            for opcode, _arg, pos in opcodes:
-                if opcode.name in dangerous:
+            data = file_path.read_bytes()
+            recent_strings: list[str] = []
+            for opcode, arg, _pos in pickletools.genops(data):
+                if opcode.name in ("SHORT_BINUNICODE", "BINUNICODE", "UNICODE", "BINSTRING", "SHORT_BINSTRING"):
+                    recent_strings = (recent_strings + [str(arg)])[-2:]
+                    continue
+                if opcode.name == "GLOBAL":  # protocol 0-2: arg is "module name"
+                    module, _, name = str(arg).partition(" ")
+                elif opcode.name == "STACK_GLOBAL" and len(recent_strings) == 2:
+                    module, name = recent_strings  # protocol 4+: pushed as two strings
+                else:
+                    continue
+                root = module.split(".")[0]
+                if name in self.safe_globals.get(module, ()):
+                    continue
+                if root in self.dangerous_modules or name in self.dangerous_callables:
                     findings.append(
                         ScanFinding(
-                            detector="pickle_scanner",
-                            finding_type="insecure_deserialization",
+                            detector="PickleDetector",
+                            finding_type="dangerous_import",
                             severity=SeverityLevel.CRITICAL,
-                            description=(
-                                f"Pickle opcode {opcode.name} at offset {pos} "
-                                f"{dangerous[opcode.name]}"
-                            ),
+                            description=f"Pickle imports {module}.{name}, which can execute code when loaded",
                             file_path=str(file_path),
-                            metadata={
-                                "opcode": opcode.name,
-                                "offset": pos,
-                                "remediation": (
-                                    "Replace the pickle with a safe serialization format "
-                                    "(JSON, MessagePack) or load it in an isolated sandbox."
-                                ),
-                            },
+                            metadata={"module": module, "name": name},
                         )
                     )
-
-            if "PROTO" not in opcode_names and findings:
-                findings.append(
-                    ScanFinding(
-                        detector="pickle_scanner",
-                        finding_type="insecure_deserialization",
-                        severity=SeverityLevel.LOW,
-                        description="Pickle file does not declare a protocol version",
-                        file_path=str(file_path),
-                        metadata={
-                            "remediation": "Re-serialise the file with an explicit protocol version."
-                        },
+                else:
+                    findings.append(
+                        ScanFinding(
+                            detector="PickleDetector",
+                            finding_type="untrusted_global",
+                            severity=SeverityLevel.CRITICAL,
+                            description=(
+                                f"Pickle {opcode.name} imports {module}.{name}, which is not a known "
+                                "data type and is called when the file is loaded"
+                            ),
+                            file_path=str(file_path),
+                            metadata={"module": module, "name": name},
+                        )
                     )
-                )
-
         except Exception as e:
-            logger.warning("pickle_scan_failed", file_path=str(file_path), error=str(e))
-
+            findings.append(
+                ScanFinding(
+                    detector="PickleDetector",
+                    finding_type="unparseable_pickle",
+                    severity=SeverityLevel.MEDIUM,
+                    description=f"Could not parse pickle opcodes: {e}",
+                    file_path=str(file_path),
+                    metadata={},
+                )
+            )
         return findings
 
     def _analyze_object(self, obj: Any, file_path: str) -> list[ScanFinding]:

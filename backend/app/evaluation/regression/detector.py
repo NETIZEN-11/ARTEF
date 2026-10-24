@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 from app.core.exceptions import NotFoundError
@@ -29,8 +30,15 @@ class RegressionDetector:
         self.regression_repo = regression_repo
 
     async def detect_regressions(
-        self, run_id: UUID | str, baseline_id: UUID | str
+        self, run_id: UUID, baseline_id: UUID, classifier: Any = None
     ) -> list[RegressionFinding]:
+        """Diff a run against a baseline and persist each regression.
+
+        Only behaviour that got worse is a regression: PASS->FAIL, PASS->INCONCLUSIVE,
+        INCONCLUSIVE->FAIL, and new tests that do not pass. Improvements are logged, not
+        flagged. If a classifier is given, the final (deterministic) severity is applied
+        before the row is saved, so the gate and the stored record agree.
+        """
         baseline = await self.baseline_repo.get(baseline_id)
         if not baseline:
             raise NotFoundError("Baseline", str(baseline_id))
@@ -46,6 +54,8 @@ class RegressionDetector:
             baseline_item = baseline_map.get(test_case_id)
 
             if not baseline_item:
+                if result.verdict == Verdict.PASS:
+                    continue  # a new test that passes is not a regression
                 finding = RegressionFinding(
                     test_case_id=test_case_id,
                     previous_verdict=Verdict.INCONCLUSIVE,
@@ -58,14 +68,16 @@ class RegressionDetector:
                     baseline_run_id=str(baseline.run_id),
                     current_run_id=str(run_id),
                 )
-                findings.append(finding)
-                await self._save_regression(finding, run_id, baseline_id)
+                findings.append(await self._save_regression(finding, run_id, baseline_id, classifier))
                 continue
 
             previous = baseline_item.verdict
             current = result.verdict
 
             if previous == current:
+                continue
+            if current == Verdict.PASS:
+                logger.info("test_improved", test_case_id=test_case_id, previous=previous.value)
                 continue
 
             regression_type = self._classify_regression(previous, current)
@@ -88,8 +100,14 @@ class RegressionDetector:
                 baseline_run_id=str(baseline.run_id),
                 current_run_id=str(run_id),
             )
-            findings.append(finding)
-            await self._save_regression(finding, run_id, baseline_id)
+            findings.append(await self._save_regression(finding, run_id, baseline_id, classifier))
+
+        # Every executed test now produces a result (failed executions are INCONCLUSIVE), so a
+        # baseline test with no result was removed or deactivated: suite drift, not a regression.
+        result_ids = {str(r.test_case_id) for r in results}
+        drifted = [tc_id for tc_id in baseline_map if tc_id not in result_ids]
+        if drifted:
+            logger.warning("suite_drift", run_id=str(run_id), missing_test_case_ids=drifted)
 
         return findings
 
@@ -124,8 +142,12 @@ class RegressionDetector:
         return SeverityLevel.LOW
 
     async def _save_regression(
-        self, finding: RegressionFinding, run_id: UUID | str, baseline_id: UUID | str
-    ) -> Regression:
+        self, finding: RegressionFinding, run_id: UUID, baseline_id: UUID, classifier: Any = None
+    ) -> RegressionFinding:
+        if classifier is not None:
+            classification = await classifier.classify(finding)
+            finding.severity = classification.level
+            finding.evidence.append(EvidenceItem(source="severity", text=classification.rationale))
         regression = Regression(
             run_id=run_id,
             baseline_id=baseline_id,
@@ -136,4 +158,6 @@ class RegressionDetector:
             severity=finding.severity,
             evidence=[e.model_dump() for e in finding.evidence],
         )
-        return await self.regression_repo.create(regression)
+        saved = await self.regression_repo.create(regression)
+        finding.regression_id = str(saved.id) if getattr(saved, "id", None) else None
+        return finding

@@ -44,7 +44,7 @@ async def readiness_check(db: AsyncSession = Depends(get_db)):
         checks["database"] = False
     required["database"] = checks["database"]
 
-    # --- redis (required when CELERY is used, i.e. a worker is deployed) ---
+    # --- redis (required when a Celery worker runs the evaluations) ---
     if settings.CELERY_BROKER_URL:
         try:
             client = redis.from_url(settings.REDIS_URL)
@@ -52,7 +52,9 @@ async def readiness_check(db: AsyncSession = Depends(get_db)):
             checks["redis"] = True
         except Exception:
             checks["redis"] = False
-        required["redis"] = checks["redis"]
+        # With CELERY_TASK_ALWAYS_EAGER the API runs evaluations itself and Redis is not used.
+        if not settings.CELERY_TASK_ALWAYS_EAGER:
+            required["redis"] = checks["redis"]
 
     # --- chromadb (optional: only when a vector store is configured) ---
     if settings.CHROMA_HOST:

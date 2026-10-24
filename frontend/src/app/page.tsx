@@ -466,7 +466,7 @@ export default function LandingPage() {
                 <span>On-the-Job Training Deliverable - 2026</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-white">
-                Designed &amp; Built by Nitesh Singh
+                Designed &amp; Built by Harish R S &amp; Nitesh Singh
               </h3>
               <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
                 ARTEF was conceived and implemented as a production-grade AI security system combining FastAPI, Next.js 14, Celery workers, ChromaDB vector indexing, RBAC authentication, and real-time adversarial evaluation matrices.

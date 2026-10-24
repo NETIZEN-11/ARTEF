@@ -2,16 +2,20 @@ FROM node:20-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+# pnpm 10: pnpm-workspace.yaml uses pnpm 10 settings (allowBuilds, minimumReleaseAgeExclude).
+RUN corepack enable && corepack prepare pnpm@10.18.0 --activate
 
 WORKDIR /app
 
 FROM base AS builder
 
-# The lockfile is copied separately so that the dependency layer is cached
-# and is only invalidated when the dependencies actually change.
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-RUN pnpm install --no-frozen-lockfile
+# NEXT_PUBLIC_* values are inlined into the client bundle at build time.
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_OUTPUT_STANDALONE=true
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 # `output: "standalone"` in next.config.mjs produces the server bundle that

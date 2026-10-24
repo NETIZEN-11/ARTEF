@@ -51,8 +51,13 @@ class ConflictError(RedTeamException):
 
 
 class TargetAgentError(RedTeamException):
-    def __init__(self, message: str, details: dict[str, Any] | None = None):
-        super().__init__(message, "TARGET_AGENT_ERROR", details, status.HTTP_502_BAD_GATEWAY)
+    def __init__(
+        self,
+        message: str,
+        code: str = "TARGET_AGENT_ERROR",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(message, code, details, status.HTTP_502_BAD_GATEWAY)
 
 
 class TargetAgentTimeoutError(TargetAgentError):
@@ -155,6 +160,16 @@ class RateLimitError(RedTeamException):
             "RATE_LIMIT_ERROR",
             {"retry_after": retry_after},
             status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+
+class TaskQueueUnavailableError(RedTeamException):
+    def __init__(self, details: dict[str, Any] | None = None):
+        super().__init__(
+            "Task queue unavailable: is Redis running and a Celery worker started?",
+            "TASK_QUEUE_UNAVAILABLE",
+            details,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
 

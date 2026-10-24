@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """Seed development data for the Agent Red-Teaming Framework."""
 
-import app.core.sqlite_compat  # noqa: F401
+from dotenv import load_dotenv
+
+# SEED_* values are read with os.getenv; also accept them from backend/.env (scripts/dev_setup.py
+# writes them there). Real environment variables still take precedence.
+load_dotenv(".env")
+
+import app.core.sqlite_compat  # noqa: F401, E402
 import asyncio
+import os
 import uuid
 from datetime import datetime
 from passlib.context import CryptContext

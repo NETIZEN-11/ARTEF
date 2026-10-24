@@ -52,7 +52,7 @@ class TestCaseRepository(BaseRepository[TestCase]):
         return result.scalar_one_or_none()
 
     async def list_by_suite(
-        self, suite_id: UUID, skip: int = 0, limit: int = 100
+        self, suite_id: UUID, skip: int = 0, limit: int | None = None
     ) -> list[TestCase]:
         return await self.list(
             skip=skip, limit=limit, filters={"suite_id": suite_id, "is_active": True}

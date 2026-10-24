@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.enums import ExecutionStatus, RunStatus, Verdict
 from app.models.run import Execution, Result, Run
+from app.models.target_agent import TargetAgent
+from app.models.test_suite import TestSuite
 from app.repositories.base import BaseRepository
 
 
@@ -41,6 +43,7 @@ class RunRepository(BaseRepository[Run]):
         Run.total_cost_usd,
         Run.total_latency_ms,
         Run.error_message,
+        Run.gate_decision,
         Run.created_at,
         Run.updated_at,
     )
@@ -55,12 +58,20 @@ class RunRepository(BaseRepository[Run]):
     ) -> list[dict]:
         """List runs without loading the related rows.
 
-        Returns the run counters as plain dictionaries. The relationship
-        columns are not selected, so the query does not join the target
-        agent, the suite, the baseline or the matrix.
+        Returns the run counters as plain dictionaries. Only the agent and suite
+        names are joined in (for display); the baseline, matrix and other related
+        rows are not loaded.
         """
-        columns = list(self.LIST_COLUMNS)
-        query = select(*columns)
+        columns = [
+            *self.LIST_COLUMNS,
+            TargetAgent.name.label("target_agent_name"),
+            TestSuite.name.label("suite_name"),
+        ]
+        query = (
+            select(*columns)
+            .outerjoin(TargetAgent, TargetAgent.id == Run.target_agent_id)
+            .outerjoin(TestSuite, TestSuite.id == Run.suite_id)
+        )
         if filters:
             for field, value in filters.items():
                 query = query.where(self._column(field) == value)
@@ -68,7 +79,8 @@ class RunRepository(BaseRepository[Run]):
             column = self._column(order_by)
             query = query.order_by(column.desc() if descending else column.asc())
         else:
-            query = query.order_by(self._column("id").asc())
+            # Newest first; the id breaks ties so pagination is stable.
+            query = query.order_by(Run.created_at.desc(), Run.id.asc())
         query = query.offset(skip).limit(limit)
         result = await self.session.execute(query)
         return [dict(row._mapping) for row in result.all()]
@@ -178,7 +190,7 @@ class ExecutionRepository(BaseRepository[Execution]):
     def __init__(self, session: AsyncSession):
         super().__init__(Execution, session)
 
-    async def list_by_run(self, run_id: UUID, skip: int = 0, limit: int = 100) -> list[Execution]:
+    async def list_by_run(self, run_id: UUID, skip: int = 0, limit: int | None = None) -> list[Execution]:
         return await self.list(skip=skip, limit=limit, filters={"run_id": run_id})
 
     async def list_all_by_run(self, run_id: UUID) -> list[Execution]:
@@ -211,7 +223,9 @@ class ResultRepository(BaseRepository[Result]):
     def __init__(self, session: AsyncSession):
         super().__init__(Result, session)
 
-    async def list_by_run(self, run_id: UUID | str, skip: int = 0, limit: int = 100) -> list[Result]:
+    async def list_by_run(
+        self, run_id: UUID | str, skip: int = 0, limit: int | None = None
+    ) -> list[Result]:
         return await self.list(skip=skip, limit=limit, filters={"run_id": run_id})
 
     async def list_all_by_run(self, run_id: UUID | str) -> list[Result]:

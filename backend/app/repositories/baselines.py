@@ -16,19 +16,15 @@ class BaselineRepository(BaseRepository[Baseline]):
         super().__init__(Baseline, session)
 
     async def get_active_for_suite(self, suite_id: UUID) -> Baseline | None:
-        """The most recent active baseline for a suite.
-
-        ``scalar_one_or_none`` raised ``MultipleResultsFound`` when a suite
-        had more than one active baseline (which the auto-baseline flow
-        produced). The newest row is the correct answer.
-        """
+        # Most recently approved active baseline (create_baseline keeps at most one active,
+        # but never crash on legacy data with several).
         result = await self.session.execute(
             select(Baseline)
             .where(Baseline.suite_id == suite_id, Baseline.is_active.is_(True))
-            .order_by(Baseline.created_at.desc())
+            .order_by(Baseline.approved_at.desc())
             .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_by_suite_version(self, suite_id: UUID, suite_version: int) -> Baseline | None:
         result = await self.session.execute(
@@ -39,7 +35,17 @@ class BaselineRepository(BaseRepository[Baseline]):
             .order_by(Baseline.created_at.desc())
             .limit(1)
         )
-        return result.scalar_one_or_none()
+        return result.scalars().first()
+
+    async def get_by_run(self, run_id: UUID) -> Baseline | None:
+        result = await self.session.execute(select(Baseline).where(Baseline.run_id == run_id))
+        return result.scalars().first()
+
+    async def deactivate_for_suite(self, suite_id: UUID, keep_id: UUID | None = None) -> None:
+        for baseline in await self.list(limit=None, filters={"suite_id": suite_id, "is_active": True}):
+            if keep_id is None or str(baseline.id) != str(keep_id):
+                baseline.is_active = False
+        await self.session.flush()
 
     async def list_by_suite(self, suite_id: UUID) -> list[Baseline]:
         return await self.list(filters={"suite_id": suite_id})
@@ -49,8 +55,8 @@ class BaselineItemRepository(BaseRepository[BaselineItem]):
     def __init__(self, session: AsyncSession):
         super().__init__(BaselineItem, session)
 
-    async def list_by_baseline(self, baseline_id: UUID | str) -> list[BaselineItem]:
-        return await self.list(filters={"baseline_id": baseline_id})
+    async def list_by_baseline(self, baseline_id: UUID) -> list[BaselineItem]:
+        return await self.list(limit=None, filters={"baseline_id": baseline_id})
 
     async def get_by_baseline_and_test_case(
         self, baseline_id: UUID | str, test_case_id: UUID | str
@@ -67,11 +73,11 @@ class RegressionRepository(BaseRepository[Regression]):
     def __init__(self, session: AsyncSession):
         super().__init__(Regression, session)
 
-    async def list_by_run(self, run_id: UUID | str) -> list[Regression]:
-        return await self.list(filters={"run_id": run_id})
+    async def list_by_run(self, run_id: UUID) -> list[Regression]:
+        return await self.list(limit=None, filters={"run_id": run_id})
 
-    async def list_by_baseline(self, baseline_id: UUID | str) -> list[Regression]:
-        return await self.list(filters={"baseline_id": baseline_id})
+    async def list_by_baseline(self, baseline_id: UUID) -> list[Regression]:
+        return await self.list(limit=None, filters={"baseline_id": baseline_id})
 
     async def list_by_severity(self, severity: SeverityLevel) -> list[Regression]:
         return await self.list(filters={"severity": severity})

@@ -132,6 +132,7 @@ class RegressionFinding(BaseModel):
     evidence: list[EvidenceItem] = Field(default_factory=list)
     baseline_run_id: str
     current_run_id: str
+    regression_id: str | None = None  # id of the persisted Regression row, once saved
 
 
 class SeverityClassification(BaseModel):

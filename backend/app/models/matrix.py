@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import RunStatus
 from app.models.run import Run
+from app.models.types import UUIDString
 from app.models.user import Base
 
 if TYPE_CHECKING:
@@ -27,11 +28,11 @@ if TYPE_CHECKING:
 class EvaluationMatrix(Base):
     __tablename__ = "evaluation_matrices"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     suite_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("test_suites.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -55,7 +56,7 @@ class EvaluationMatrix(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )
     created_by: Mapped[String | None] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        UUIDString(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     suite: Mapped["TestSuite"] = relationship(back_populates="matrices", lazy="joined")
@@ -73,22 +74,22 @@ class EvaluationMatrix(Base):
 class EvaluationMatrixCell(Base):
     __tablename__ = "evaluation_matrix_cells"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     matrix_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("evaluation_matrices.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     test_case_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("test_cases.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     configuration: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     run_id: Mapped[String | None] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("runs.id", ondelete="SET NULL"),
         nullable=True,
         index=True,

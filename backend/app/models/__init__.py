@@ -7,6 +7,7 @@ from app.models.feature_flag import FeatureFlag, Notification
 from app.models.guardrails import Guardrail, GuardrailConfig, GuardrailFinding
 from app.models.matrix import EvaluationMatrix, EvaluationMatrixCell
 from app.models.model_config import ModelConfig, PromptVersion
+from app.models.redteam_session import RedTeamSessionRecord
 from app.models.regression import Regression, SeverityFinding
 from app.models.review import ReviewLabel, ReviewQueue
 from app.models.run import Execution, Result, Run
@@ -38,6 +39,7 @@ __all__ = [
     "Notification",
     "Permission",
     "PromptVersion",
+    "RedTeamSessionRecord",
     "Regression",
     "Result",
     "ReviewLabel",

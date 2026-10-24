@@ -22,6 +22,7 @@ from app.repositories.baselines import (
     ReviewQueueRepository,
 )
 from app.repositories.runs import ResultRepository
+from app.services.audit import record_audit
 
 router = APIRouter()
 
@@ -211,6 +212,10 @@ async def label_review(
     review.reviewer_notes = request.rationale
     review.resolved_at = datetime.utcnow()
     await review_repo.session.flush()
+    await record_audit(
+        review_repo.session, current_user.sub, "review.label", "review", review.id,
+        {"label": request.label.value, "rationale": request.rationale},
+    )
 
     if request.label == ReviewLabel.CONFIRMED_REGRESSION:
         regression = await regression_repo.get(review.regression_id)
@@ -257,6 +262,7 @@ async def update_review(
     review_id: UUID,
     update: ReviewUpdateRequest,
     review_repo: ReviewQueueRepository = Depends(get_review_repo),
+    label_repo: ReviewLabelRepository = Depends(get_review_label_repo),
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer", "reviewer"])),
 ):
     review = await review_repo.get(review_id)
@@ -267,6 +273,19 @@ async def update_review(
         review.reviewer_notes = update.notes
     if update.label is not None:
         review.label = update.label
+        # Keep an immutable label history (FR-010), as POST /{id}/label does.
+        await label_repo.create(
+            ReviewLabelRecord(
+                review_id=review_id,
+                label=update.label,
+                reviewer_id=UUID(current_user.sub),
+                rationale=update.notes,
+            )
+        )
+        await record_audit(
+            review_repo.session, current_user.sub, "review.label", "review", review.id,
+            {"label": update.label.value, "notes": update.notes},
+        )
         if update.label in (
             ReviewLabel.CONFIRMED_REGRESSION,
             ReviewLabel.FALSE_POSITIVE,

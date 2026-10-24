@@ -19,13 +19,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import ModelProvider, PromptVersionStatus
+from app.models.types import UUIDString
 from app.models.user import Base
 
 
 class ModelConfig(Base):
     __tablename__ = "model_configs"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     provider: Mapped[ModelProvider] = mapped_column(
         SQLEnum(ModelProvider, native_enum=False, create_constraint=True),
         nullable=False,
@@ -53,7 +54,7 @@ class ModelConfig(Base):
 class PromptVersion(Base):
     __tablename__ = "prompt_versions"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     prompt_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     version: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
@@ -64,14 +65,14 @@ class PromptVersion(Base):
         nullable=False,
     )
     created_by: Mapped[String] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUIDString(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     promoted_by: Mapped[String | None] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        UUIDString(), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
     creator: Mapped["User"] = relationship(foreign_keys=[created_by], lazy="joined")

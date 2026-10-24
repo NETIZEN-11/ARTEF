@@ -18,13 +18,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.domain.enums import TestCaseSeverity
+from app.models.types import UUIDString
 from app.models.user import Base
 
 
 class AttackTaxonomy(Base):
     __tablename__ = "attack_taxonomy"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     subcategory: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     technique: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -52,7 +53,7 @@ class AttackTaxonomy(Base):
 class EmbeddingDocument(Base):
     __tablename__ = "embedding_documents"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     collection: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     doc_metadata: Mapped[dict[str, Any]] = mapped_column(

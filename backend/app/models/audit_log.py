@@ -13,15 +13,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.models.types import UUIDString
 from app.models.user import Base
 
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     user_id: Mapped[String | None] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
@@ -29,7 +30,7 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     resource_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     resource_id: Mapped[String | None] = mapped_column(
-        String(36), nullable=True, index=True
+        UUIDString(), nullable=True, index=True
     )
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)

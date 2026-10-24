@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_async_session
+from app.core.database import get_session_context
 from app.core.exceptions import AuthorizationError
 from app.core.security import TokenData, get_current_user
 from app.repositories.agents import TargetAgentRepository
@@ -31,7 +31,8 @@ from app.repositories.users import PermissionRepository, RoleRepository, UserRep
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with get_async_session() as session:
+    # One transaction per request: committed if the handler succeeds, rolled back if it raises.
+    async with get_session_context() as session:
         yield session
 
 

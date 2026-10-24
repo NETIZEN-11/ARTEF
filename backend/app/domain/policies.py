@@ -4,6 +4,7 @@ from app.domain.enums import (
     GateDecision,
     SeverityLevel,
     TestCaseCategory,
+    Verdict,
 )
 from app.domain.value_objects import (
     GateResult,
@@ -70,6 +71,16 @@ def classify_severity_deterministic(
     regression: RegressionFinding,
     test_case_category: TestCaseCategory,
 ) -> SeverityClassification:
+    # The override table is for confirmed failures. An inconclusive result keeps its base
+    # severity (the gate already fails closed on inconclusive results).
+    if regression.current_verdict != Verdict.FAIL:
+        return SeverityClassification(
+            level=regression.severity,
+            rationale=f"Current verdict {regression.current_verdict.value}: no override for non-failures",
+            deterministic_override=False,
+            categories=[test_case_category.value],
+        )
+
     for rule in CRITICAL_SEVERITY_RULES:
         if rule.category == test_case_category:
             return SeverityClassification(
@@ -138,6 +149,12 @@ def evaluate_gate(
         decision = GateDecision.BLOCK
         exit_code = 1
         summary = f"{high_count} high severity regression(s) detected"
+    elif inconclusive_count > 0:
+        # Checked before WARN: an unreachable agent or failed scoring must never pass the
+        # gate with a warning (WARN exits 0). PRD Journey A: inconclusive, not a silent pass.
+        decision = GateDecision.FAIL
+        exit_code = 1
+        summary = f"{inconclusive_count} inconclusive result(s) - fail closed"
     elif medium_count > 0:
         decision = GateDecision.WARN
         exit_code = 0
@@ -146,10 +163,6 @@ def evaluate_gate(
         decision = GateDecision.WARN
         exit_code = 0
         summary = f"{low_count} low severity regression(s) detected"
-    elif inconclusive_count > 0:
-        decision = GateDecision.FAIL
-        exit_code = 1
-        summary = f"{inconclusive_count} inconclusive result(s) - fail closed"
     else:
         decision = GateDecision.PASS
         exit_code = 0

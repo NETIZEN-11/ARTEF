@@ -21,6 +21,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import Verdict
+from app.models.types import UUIDString
 from app.models.user import Base
 
 if TYPE_CHECKING:
@@ -33,16 +34,16 @@ if TYPE_CHECKING:
 class Baseline(Base):
     __tablename__ = "baselines"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     suite_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("test_suites.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     suite_version: Mapped[int] = mapped_column(Integer, nullable=False)
     run_id: Mapped[String] = mapped_column(
-        String(36), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False, index=True
+        UUIDString(), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -50,7 +51,7 @@ class Baseline(Base):
     model_versions: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     prompt_versions: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     approved_by: Mapped[String] = mapped_column(
-        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        UUIDString(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     approved_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -81,15 +82,15 @@ class Baseline(Base):
 class BaselineItem(Base):
     __tablename__ = "baseline_items"
 
-    id: Mapped[String] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    id: Mapped[String] = mapped_column(UUIDString(), primary_key=True, default=lambda: str(uuid4()))
     baseline_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("baselines.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
     test_case_id: Mapped[String] = mapped_column(
-        String(36),
+        UUIDString(),
         ForeignKey("test_cases.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

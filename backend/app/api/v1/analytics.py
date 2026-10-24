@@ -114,15 +114,11 @@ async def get_analytics(
             sorted_days.append(d)
 
     runs_over_time = [{"date": d, "count": runs_by_day.get(d, 0)} for d in sorted_days]
+    # Only days that actually ran tests; an empty day is not a 100% pass rate.
     pass_rate_over_time = [
-        {
-            "date": d,
-            "rate": round(
-                (passed_by_day.get(d, 0) / tests_by_day[d] * 100) if tests_by_day.get(d, 0) > 0 else 100.0,
-                1,
-            ),
-        }
+        {"date": d, "rate": round(passed_by_day[d] / tests_by_day[d] * 100, 1)}
         for d in sorted_days
+        if tests_by_day.get(d, 0) > 0
     ]
     regressions_over_time = [
         {"date": d, "count": regressions_by_day.get(d, 0)} for d in sorted_days
@@ -148,7 +144,7 @@ async def get_analytics(
         {"severity": "Low", "count": total_low},
     ]
 
-    run_ids = [str(r.id) for r in filtered_runs]
+    run_ids = [str(r["id"]) for r in filtered_runs]
     category_distribution, top_failing_tests = await _failure_breakdown(
         result_repo, run_ids, days
     )
@@ -200,23 +196,28 @@ async def _failure_breakdown(
             Result.created_at >= cutoff,
         )
         .group_by(TestCase.category)
+        .order_by(func.count(Result.id).desc())
     )
     category_distribution = [
         {
-            "category": (category.value if hasattr(category, "value") else str(category)).title(),
+            "category": (category.value if hasattr(category, "value") else str(category))
+            .replace("_", " ")
+            .title(),
             "count": count,
         }
         for category, count in category_rows.all()
     ]
 
+    # Report the suite's own test id (e.g. "JB_001"), not the internal primary key.
     failing_rows = await session.execute(
-        select(Result.test_case_id, func.count(Result.id))
+        select(TestCase.test_case_id, func.count(Result.id))
+        .join(Result, Result.test_case_id == TestCase.id)
         .where(
             Result.run_id.in_(recent_run_ids),
             Result.verdict == Verdict.FAIL,
             Result.created_at >= cutoff,
         )
-        .group_by(Result.test_case_id)
+        .group_by(TestCase.id, TestCase.test_case_id)
         .order_by(func.count(Result.id).desc())
         .limit(10)
     )

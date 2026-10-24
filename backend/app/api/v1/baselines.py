@@ -5,12 +5,20 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from app.api.deps import TokenData, get_baseline_item_repo, get_baseline_repo, require_role
-from app.core.exceptions import ConflictError, NotFoundError
-from app.domain.enums import Verdict
+from app.api.deps import (
+    TokenData,
+    get_baseline_item_repo,
+    get_baseline_repo,
+    get_result_repo,
+    get_run_repo,
+    require_role,
+)
+from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.domain.enums import RunStatus, Verdict
+from app.repositories.runs import ResultRepository, RunRepository
+from app.services.audit import record_audit
 from app.models.baseline import Baseline, BaselineItem
 from app.repositories.baselines import BaselineItemRepository, BaselineRepository
-from app.repositories.runs import ResultRepository
 
 router = APIRouter()
 
@@ -77,12 +85,27 @@ async def create_baseline(
     baseline: BaselineCreate,
     baseline_repo: BaselineRepository = Depends(get_baseline_repo),
     baseline_item_repo: BaselineItemRepository = Depends(get_baseline_item_repo),
+    run_repo: RunRepository = Depends(get_run_repo),
+    result_repo: ResultRepository = Depends(get_result_repo),
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer"])),
 ):
-    existing = await baseline_repo.get_by_suite_version(baseline.suite_id, baseline.suite_version)
-    if existing:
-        raise ConflictError("Baseline already exists for this suite version")
+    """Approve a finished run as the suite's known-good baseline (replaces the active one)."""
+    run = await run_repo.get(baseline.run_id)
+    if not run:
+        raise NotFoundError("Run", str(baseline.run_id))
+    if str(run.suite_id) != str(baseline.suite_id):
+        raise ValidationError("Run does not belong to this suite")
+    if run.status not in (RunStatus.COMPLETED, RunStatus.REVIEW_REQUIRED):
+        raise ValidationError(f"Only finished runs can be baselined (run is {run.status.value})")
+    if run.inconclusive_count:
+        raise ValidationError(
+            f"Run has {run.inconclusive_count} inconclusive result(s); a baseline must have a "
+            "definite PASS/FAIL verdict for every test"
+        )
+    if await baseline_repo.get_by_run(baseline.run_id):
+        raise ConflictError("This run is already a baseline")
 
+    await baseline_repo.deactivate_for_suite(baseline.suite_id)
     new_baseline = Baseline(
         **baseline.model_dump(),
         framework_version="1.0.0",
@@ -91,23 +114,29 @@ async def create_baseline(
         approved_by=UUID(current_user.sub),
         approved_at=datetime.utcnow(),
     )
+    new_baseline.is_active = True
     new_baseline = await baseline_repo.create(new_baseline)
 
-    # `Run.results` is a `lazy="dynamic"` relationship, so it cannot be
-    # iterated outside a greenlet context - doing so raises MissingGreenlet.
-    # The results are queried explicitly instead.
-    if baseline.run_id:
-        result_repo = ResultRepository(baseline_repo.session)
-        results = await result_repo.list_by_run(baseline.run_id, skip=0, limit=10_000)
-        for result in results:
-            item = BaselineItem(
+    # Query results explicitly: run.results is a lazy relationship (unusable in async code).
+    results = await result_repo.list_by_run(run.id)
+    for result in results:
+        await baseline_item_repo.create(
+            BaselineItem(
                 baseline_id=new_baseline.id,
                 test_case_id=result.test_case_id,
                 verdict=result.verdict,
                 confidence=result.confidence,
                 evidence=result.evidence,
             )
-            await baseline_item_repo.create(item)
+        )
+    await record_audit(
+        baseline_repo.session,
+        current_user.sub,
+        "baseline.approve",
+        "baseline",
+        new_baseline.id,
+        {"run_id": str(run.id), "suite_id": str(run.suite_id), "items": len(results)},
+    )
 
     return BaselineResponse.model_validate(new_baseline)
 
@@ -165,12 +194,31 @@ async def approve_baseline(
     if baseline.is_active:
         raise ConflictError("Baseline already approved")
 
+    await baseline_repo.deactivate_for_suite(baseline.suite_id, keep_id=baseline.id)
     baseline.is_active = True
     baseline.approved_by = UUID(current_user.sub)
     baseline.approved_at = datetime.utcnow()
     await baseline_repo.session.flush()
+    await record_audit(
+        baseline_repo.session, current_user.sub, "baseline.approve", "baseline", baseline.id
+    )
 
     return {"message": "Baseline approved"}
+
+
+@router.delete("/{baseline_id}")
+async def delete_baseline(
+    baseline_id: UUID,
+    baseline_repo: BaselineRepository = Depends(get_baseline_repo),
+    current_user: TokenData = Depends(require_role(["admin"])),
+):
+    """Baselines are never hard-deleted: their regressions and review items (the evidence
+    trail) cascade from them. Deactivate instead."""
+    if not await baseline_repo.get(baseline_id):
+        raise NotFoundError("Baseline", str(baseline_id))
+    raise ConflictError(
+        "Baselines are kept for the audit trail and cannot be deleted. Deactivate it instead."
+    )
 
 
 @router.post("/{baseline_id}/deactivate")
@@ -185,17 +233,8 @@ async def deactivate_baseline(
 
     baseline.is_active = False
     await baseline_repo.session.flush()
+    await record_audit(
+        baseline_repo.session, current_user.sub, "baseline.deactivate", "baseline", baseline.id
+    )
 
     return {"message": "Baseline deactivated"}
-
-
-@router.delete("/{baseline_id}")
-async def delete_baseline(
-    baseline_id: UUID,
-    baseline_repo: BaselineRepository = Depends(get_baseline_repo),
-    current_user: TokenData = Depends(require_role(["admin"])),
-):
-    deleted = await baseline_repo.delete(baseline_id)
-    if not deleted:
-        raise NotFoundError("Baseline", str(baseline_id))
-    return {"message": "Baseline deleted"}

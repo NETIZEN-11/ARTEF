@@ -1,8 +1,11 @@
 from app.core.config import Settings
 
 
-def test_settings_load():
+def test_settings_load(monkeypatch):
     """Test that settings can be instantiated with required fields."""
+    # This test checks defaults, so ignore any values set in the environment.
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    monkeypatch.delenv("DEBUG", raising=False)
     settings = Settings(
         SECRET_KEY="a" * 32,
         DATABASE_URL="postgresql+asyncpg://test:test@localhost/test",

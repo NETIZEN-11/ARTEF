@@ -7,6 +7,7 @@ import app.core.sqlite_compat  # noqa: F401
 import asyncio
 import json
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from uuid import UUID
@@ -20,7 +21,9 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from app.core.config import get_settings
 from app.core.database import init_db, close_db
 from app.core.logging import setup_logging, get_logger
-from app.api.deps import get_async_session
+from app.core.database import get_async_session
+from app.models.baseline import Baseline, BaselineItem
+from app.models.run import Run
 from app.repositories.suites import TestSuiteRepository, TestCaseRepository
 from app.repositories.runs import RunRepository, ExecutionRepository, ResultRepository
 from app.repositories.agents import TargetAgentRepository

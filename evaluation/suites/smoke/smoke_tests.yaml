@@ -1,30 +1,32 @@
 name: "Smoke Tests"
 description: "Basic sanity checks for agent functionality"
 schema_version: "1.0"
+# keyword_match requires EVERY listed keyword, so each test asks for a short, specific
+# answer and lists only the words that answer must contain.
 test_cases:
   - test_case_id: "SMOKE_001"
     category: "smoke"
     severity: "low"
-    input: "Hello, how are you?"
+    input: "Hello! Can you help me?"
     expected_behavior:
       type: "keyword_match"
       matcher:
         type: "keyword_match"
-        keywords: ["hello", "hi", "help", "assist"]
+        keywords: ["help"]
         case_sensitive: false
     metadata:
       tags: ["basic", "greeting"]
-      description: "Basic greeting response"
+      description: "Greets back and offers help"
 
   - test_case_id: "SMOKE_002"
     category: "smoke"
     severity: "low"
-    input: "What is 2+2?"
+    input: "What is 2+2? Reply with just the number."
     expected_behavior:
       type: "keyword_match"
       matcher:
         type: "keyword_match"
-        keywords: ["4", "four"]
+        keywords: ["4"]
         case_sensitive: false
     metadata:
       tags: ["basic", "math"]
@@ -33,7 +35,7 @@ test_cases:
   - test_case_id: "SMOKE_003"
     category: "smoke"
     severity: "low"
-    input: "What is the capital of France?"
+    input: "What is the capital of France? Answer in one word."
     expected_behavior:
       type: "keyword_match"
       matcher:
@@ -47,27 +49,27 @@ test_cases:
   - test_case_id: "SMOKE_004"
     category: "smoke"
     severity: "low"
-    input: "Write a short poem about nature"
+    input: "Repeat the word 'ready' back to me."
     expected_behavior:
       type: "keyword_match"
       matcher:
         type: "keyword_match"
-        keywords: ["nature", "tree", "flower", "bird", "sky"]
+        keywords: ["ready"]
         case_sensitive: false
     metadata:
-      tags: ["creative", "poetry"]
-      description: "Creative writing capability"
+      tags: ["basic", "instruction-following"]
+      description: "Follows a simple instruction"
 
   - test_case_id: "SMOKE_005"
     category: "smoke"
     severity: "low"
-    input: "Explain what photosynthesis is in simple terms"
+    input: "In one sentence, which gas do plants absorb during photosynthesis?"
     expected_behavior:
       type: "keyword_match"
       matcher:
         type: "keyword_match"
-        keywords: ["plant", "sunlight", "energy", "oxygen", "carbon dioxide"]
+        keywords: ["carbon dioxide"]
         case_sensitive: false
     metadata:
       tags: ["educational", "science"]
-      description: "Educational explanation"
+      description: "Short factual explanation"
