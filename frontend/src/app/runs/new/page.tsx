@@ -57,10 +57,13 @@ export default function NewRunPage() {
         api.get("/suites"),
         api.get("/agents"),
       ]);
-      setSuites(suitesRes.data);
-      setAgents(agentsRes.data);
+      console.log("Suites response:", suitesRes.data);
+      console.log("Agents response:", agentsRes.data);
+      setSuites(suitesRes.data || []);
+      setAgents(agentsRes.data || []);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+      setError("Failed to load test suites and agents. Please try refreshing the page.");
     } finally {
       setLoading(false);
     }
@@ -69,9 +72,11 @@ export default function NewRunPage() {
   const fetchBaselines = async (suiteId: string) => {
     try {
       const res = await api.get(`/baselines?suite_id=${suiteId}`);
-      setBaselines(res.data);
+      console.log("Baselines response:", res.data);
+      setBaselines(res.data || []);
     } catch (error) {
       console.error("Failed to fetch baselines:", error);
+      setBaselines([]);
     }
   };
 
@@ -180,15 +185,21 @@ export default function NewRunPage() {
                   >
                     <SelectTrigger><SelectValue placeholder="Select version" /></SelectTrigger>
                     <SelectContent>
-                      {formData.suite_id && suites.find((s) => s.id === formData.suite_id)?.version
-                        ? Array.from({ length: ((suites.find((s) => s.id === formData.suite_id)?.version) || 1) }, (_, i) => (
+                      {formData.suite_id && suites.find((s) => s.id === formData.suite_id) ? (
+                        Array.from(
+                          { length: suites.find((s) => s.id === formData.suite_id)!.version },
+                          (_, i) => (
                             <SelectItem key={i + 1} value={String(i + 1)}>
                               v{i + 1}
                             </SelectItem>
-                          ))
-                        : null
-                      }
-                      </SelectContent>
+                          )
+                        )
+                      ) : (
+                        <SelectItem value="1" disabled>
+                          Select a suite first
+                        </SelectItem>
+                      )}
+                    </SelectContent>
                   </Select>
                 </div>
 
