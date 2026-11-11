@@ -98,9 +98,8 @@ export default function DashboardPage() {
 
   const { data, loading, error, refresh } = useAsyncResource<DashboardData>(
     async (signal) => {
-      // All three requests are independent, so they are issued in parallel.
-      // A failing endpoint degrades that single card instead of blanking the
-      // whole dashboard.
+      // OPTIMIZATION: Issue three independent requests that fail gracefully.
+      // If one endpoint is slow, others can still complete and render.
       const [statsResult, runsResult, monitoringResult] = await Promise.allSettled([
         api.get<Stats>("/runs/stats", { signal }),
         api.get<RunSummary[]>("/runs?limit=5", { signal }),
