@@ -27,16 +27,17 @@ def _security_headers() -> dict[str, str]:
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-XSS-Protection": "1; mode=block",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-        "Content-Security-Policy": (
+    }
+    # Only apply strict security headers in production
+    if settings.is_production:
+        headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; "
             "frame-ancestors 'none'"
-        ),
-    }
-    if settings.is_production:
+        )
         headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
         headers["Pragma"] = "no-cache"
     return headers
@@ -95,7 +96,6 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(RequestSizeLimitMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
 
 cors_origins = settings.cors_origins_list
 if settings.is_production and "*" in cors_origins:
@@ -110,15 +110,19 @@ cors_regex = (
     else None
 )
 
+# In development with no explicit origins configured, use wildcard and let regex handle it
+cors_allow_origins = cors_origins if cors_origins else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=cors_allow_origins,
     allow_origin_regex=cors_regex,
     allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
 )
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX, dependencies=[Depends(rate_limit_dependency)])
 
