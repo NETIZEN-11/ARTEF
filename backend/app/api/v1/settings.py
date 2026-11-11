@@ -322,7 +322,7 @@ async def delete_feature_flag(
     flag = await flag_repo.get(flag_id)
     if not flag:
         raise NotFoundError("FeatureFlag", str(flag_id))
-    await flag_repo.delete(flag)
+    await flag_repo.delete(flag_id)
     return {"message": "Feature flag deleted"}
 
 
