@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from uuid import UUID
+import asyncio
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
@@ -157,6 +158,7 @@ async def _count_pending_in_own_session(review_repo: ReviewQueueRepository) -> i
 
 @router.get("/stats", response_model=StatsResponse)
 async def get_stats(
+    response: Response,
     run_repo: RunRepository = Depends(get_run_repo),
     review_repo: ReviewQueueRepository = Depends(get_review_repo),
     current_user: TokenData = Depends(
@@ -203,6 +205,11 @@ async def get_stats(
             pass_rate_trend.append(0.0)
         regression_trend.append(run.regression_count if run.regression_count else 0)
         cost_trend.append(run.total_cost_usd if run.total_cost_usd else 0.0)
+
+    # OPTIMIZATION: Add cache headers. Stats are aggregates that change slowly;
+    # cache for 60 seconds. Private cache (user-specific data) with revalidation.
+    response.headers["Cache-Control"] = "private, max-age=60, must-revalidate"
+    response.headers["ETag"] = f'"{hash(total_runs) % 10000000}"'
 
     return StatsResponse(
         total_runs=total_runs,
