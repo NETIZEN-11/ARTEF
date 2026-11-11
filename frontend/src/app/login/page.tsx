@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/lib/auth";
 import { handleApiError } from "@/lib/api";
 import { Shield, Lock, User, AlertTriangle, Loader2, Eye, EyeOff, ArrowLeft, AlertCircle } from "lucide-react";
+import { ContactAdminDialog } from "@/components/ui/contact-admin-dialog";
 
 /**
  * Only relative, same-origin paths are accepted as a post-login destination.
@@ -32,6 +33,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showContactDialog, setShowContactDialog] = useState(false);
 
   const nextPath = safeNextPath(searchParams.get("next"));
 
@@ -197,13 +199,20 @@ function LoginForm() {
                 <p>
                   Need access?{" "}
                   <button
-                    onClick={() => alert("Please contact your system administrator for account access.")}
+                    onClick={() => setShowContactDialog(true)}
                     className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+                    type="button"
                   >
                     Contact Administrator
                   </button>
                 </p>
               </div>
+              
+              {/* Contact Admin Dialog */}
+              <ContactAdminDialog 
+                open={showContactDialog} 
+                onOpenChange={setShowContactDialog} 
+              />
             </CardContent>
           </Card>
 
