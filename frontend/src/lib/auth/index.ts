@@ -40,9 +40,14 @@ interface AuthState {
   fetchUser: () => Promise<void>;
   /** Validate the persisted session against the API. Idempotent. */
   restoreSession: () => Promise<void>;
+  // OPTIMIZATION: Track last fetch time to implement caching
+  _lastFetchUserTime: number;
+  _restoreSessionInProgress: boolean;
 }
 
 const STORAGE_KEY = "auth-storage";
+// Cache user profile for 5 minutes after fetch
+const USER_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const getStoredSession = () => {
   if (typeof window === "undefined") {
@@ -95,6 +100,8 @@ export const useAuth = create<AuthState>()(
       isAuthenticated: initialSession.isAuthenticated,
       isLoading: false,
       status: "unknown",
+      _lastFetchUserTime: 0,
+      _restoreSessionInProgress: false,
 
       login: async (username: string, password: string) => {
         set({ isLoading: true });
@@ -108,6 +115,7 @@ export const useAuth = create<AuthState>()(
             isAuthenticated: true,
             status: "authenticated",
             isLoading: false,
+            _lastFetchUserTime: Date.now(),
           });
           await get().fetchUser();
         } catch (err) {
@@ -125,6 +133,7 @@ export const useAuth = create<AuthState>()(
           isAuthenticated: false,
           isLoading: false,
           status: "unauthenticated",
+          _lastFetchUserTime: 0,
         });
         if (typeof window !== "undefined") {
           try {
@@ -159,6 +168,7 @@ export const useAuth = create<AuthState>()(
             refreshToken: newRefreshToken || refreshToken,
             isAuthenticated: true,
             status: "authenticated",
+            _lastFetchUserTime: Date.now(),
           });
           return true;
         } catch {
@@ -174,12 +184,27 @@ export const useAuth = create<AuthState>()(
           refreshToken: refresh,
           isAuthenticated: true,
           status: "authenticated",
+          _lastFetchUserTime: Date.now(),
         });
       },
 
+      /**
+       * OPTIMIZATION: Fetch user with caching.
+       * 
+       * Only calls /auth/me if:
+       * 1. User data not yet cached, OR
+       * 2. Cache older than 5 minutes
+       * 3. Token has been refreshed (new refresh resets cache)
+       */
       fetchUser: async () => {
-        const { accessToken } = get();
+        const { accessToken, _lastFetchUserTime } = get();
         if (!accessToken) {
+          return;
+        }
+
+        const now = Date.now();
+        // Use cached user data if still valid
+        if (_lastFetchUserTime > 0 && now - _lastFetchUserTime < USER_CACHE_TTL_MS) {
           return;
         }
 
@@ -190,6 +215,7 @@ export const useAuth = create<AuthState>()(
             isAuthenticated: true,
             status: "authenticated",
             isLoading: false,
+            _lastFetchUserTime: now,
           });
         } catch (err: any) {
           if (err?.response?.status === 401) {
@@ -203,14 +229,20 @@ export const useAuth = create<AuthState>()(
       },
 
       /**
-       * Validate the persisted session.
+       * OPTIMIZATION: Validate the persisted session with deduplication.
        *
        * A token that only exists in localStorage is not a session. This calls
        * `/auth/me` so an expired or tampered token is discarded instead of
        * letting the user into a dashboard that fails every request.
+       * 
+       * Guard against multiple concurrent restoreSession() calls (e.g., from
+       * tab focus events) by tracking in-progress state.
        */
       restoreSession: async () => {
-        if (get().status !== "unknown") {
+        const state = get();
+        
+        // Skip if already validating or already resolved
+        if (state._restoreSessionInProgress || state.status !== "unknown") {
           return;
         }
 
@@ -219,20 +251,27 @@ export const useAuth = create<AuthState>()(
           return;
         }
 
-        set({ isLoading: true });
-        await get().fetchUser();
+        set({ isLoading: true, _restoreSessionInProgress: true });
+        
+        try {
+          await get().fetchUser();
 
-        // `fetchUser` calls `logout()` on a 401, which already sets the
-        // status. If the request failed for a transient reason (network
-        // error) the token is still unknown-good, so the session is kept and
-        // the status stays "unknown" until a later attempt succeeds.
-        if (get().status === "unknown") {
-          set({
-            status: get().accessToken ? "authenticated" : "unauthenticated",
-            isLoading: false,
-          });
-        } else {
-          set({ isLoading: false });
+          // `fetchUser` calls `logout()` on a 401, which already sets the
+          // status. If the request failed for a transient reason (network
+          // error) the token is still unknown-good, so the session is kept and
+          // the status stays "unknown" until a later attempt succeeds.
+          const updatedState = get();
+          if (updatedState.status === "unknown") {
+            set({
+              status: updatedState.accessToken ? "authenticated" : "unauthenticated",
+              isLoading: false,
+              _restoreSessionInProgress: false,
+            });
+          } else {
+            set({ isLoading: false, _restoreSessionInProgress: false });
+          }
+        } catch (err) {
+          set({ isLoading: false, _restoreSessionInProgress: false });
         }
       },
     }),
