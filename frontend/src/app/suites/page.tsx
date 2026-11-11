@@ -93,6 +93,7 @@ export default function SuitesPage() {
 
   const handleCreateSuite = async () => {
     if (!newSuiteName.trim()) return;
+    setError(null);
     try {
       await api.post("/suites", {
         name: newSuiteName,
@@ -105,6 +106,7 @@ export default function SuitesPage() {
       fetchSuites();
     } catch (error) {
       console.error("Failed to create suite:", error);
+      setError(handleApiError(error));
     }
   };
 
