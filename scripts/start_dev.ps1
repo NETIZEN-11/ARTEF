@@ -37,9 +37,9 @@ function Start-Service([string]$Name, [int]$Port, [string]$Command) {
 
 # Evaluations run inside the API process (no Redis/Celery worker needed for local use).
 Start-Service "Backend API" 8000 "Set-Location '$Root\backend'; `$env:CELERY_TASK_ALWAYS_EAGER='true'; & '$Python' -m uvicorn app.main:app --port 8000"
-Start-Service "Demo agent (safe)" 9001 "Set-Location '$Root'; & '$Python' demo\target_agent.py --mode safe --port 9001"
-Start-Service "Demo agent (vulnerable)" 9002 "Set-Location '$Root'; & '$Python' demo\target_agent.py --mode vulnerable --port 9002"
-Start-Service "Website" 3000 "Set-Location '$Root\frontend'; npx -y pnpm@10.18.0 dev"
+Start-Service "Demo agent (safe)" 9005 "Set-Location '$Root'; & '$Python' demo\target_agent.py --mode safe --port 9005"
+Start-Service "Demo agent (vulnerable)" 9006 "Set-Location '$Root'; & '$Python' demo\target_agent.py --mode vulnerable --port 9006"
+Start-Service "Website" 3002 "Set-Location '$Root\frontend'; & '$Root\frontend\node_modules\.bin\next.cmd' dev -p 3002"
 
 Write-Host ""
 Write-Host "Waiting for the API..." -NoNewline
@@ -50,7 +50,7 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 Write-Host ""
 if (Test-PortInUse 8000) {
-    Write-Host "Ready. Open http://localhost:3000 and sign in as 'admin' with SEED_ADMIN_PASSWORD from backend\.env" -ForegroundColor Cyan
+    Write-Host "Ready. Open http://localhost:3002 and sign in as 'admin' with SEED_ADMIN_PASSWORD from backend\.env (or AdminPass123!)" -ForegroundColor Cyan
 } else {
     Write-Host "The API did not start. Check the 'ARTEF - Backend API' window for the error." -ForegroundColor Red
 }
