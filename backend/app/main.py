@@ -101,14 +101,8 @@ cors_origins = settings.cors_origins_list
 if settings.is_production and "*" in cors_origins:
     raise RuntimeError("Wildcard CORS origin not allowed in production with credentials")
 
-# The development regex allows any localhost port to make credentialed
-# requests, which is broader than the configured CORS_ORIGINS list. It is
-# only enabled when the operator has not configured an explicit list.
-cors_regex = (
-    r"http://localhost:\d+"
-    if settings.is_development and not cors_origins
-    else None
-)
+# Support regex for any Vercel preview domain and local dev ports
+cors_regex = r"https://.*\.vercel\.app|http://localhost:\d+" if settings.is_development or any("vercel" in o for o in cors_origins) else None
 
 # In development with no explicit origins configured, use wildcard and let regex handle it
 cors_allow_origins = cors_origins if cors_origins else ["*"]
