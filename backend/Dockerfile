@@ -29,6 +29,9 @@ COPY demo ./demo
 # celery -A app.workers.celery_app, python ../scripts/...).
 WORKDIR /app/backend
 
+# Generate RS256 key pair if not present
+RUN python /app/scripts/generate_keys.py
+
 FROM base AS development
 
 EXPOSE 8000
@@ -47,4 +50,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
     CMD curl -fsS http://localhost:8000/api/v1/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${UVICORN_WORKERS:-1}"]
