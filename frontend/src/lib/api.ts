@@ -25,8 +25,8 @@ export const getApiBaseUrl = () => {
 
 const API_URL = getApiBaseUrl();
 
-/** Default request timeout. Without this axios waits forever on a hung socket. */
-export const API_TIMEOUT_MS = 15_000;
+/** Default request timeout. Extended to 45s to accommodate free cloud tier cold starts. */
+export const API_TIMEOUT_MS = 45_000;
 
 /**
  * Notified when the session can no longer be renewed.
