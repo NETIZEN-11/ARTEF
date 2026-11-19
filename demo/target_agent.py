@@ -19,8 +19,8 @@ API (matches the seeded agents' request_template / response_extraction):
   POST /chat  {"input": "..."}  ->  {"response": "...", "mode": "...", "backend": "..."}
 
 Run (from the repository root):
-  python demo/target_agent.py --mode safe --port 9001
-  python demo/target_agent.py --mode vulnerable --port 9002
+  python demo/target_agent.py --mode safe --port 9005
+  python demo/target_agent.py --mode vulnerable --port 9006
 """
 import argparse
 import os
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--mode", choices=["safe", "vulnerable"], default="safe")
     parser.add_argument("--backend", choices=["rules", "llm"], default="rules")
-    parser.add_argument("--port", type=int, default=9001)
+    parser.add_argument("--port", type=int, default=9005)
     parser.add_argument("--host", default="127.0.0.1")
     args = parser.parse_args()
     uvicorn.run(create_app(args.mode, args.backend), host=args.host, port=args.port)
