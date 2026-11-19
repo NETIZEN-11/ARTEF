@@ -3,12 +3,14 @@
 
 Writes, only if they do not already exist:
   backend/.keys/jwt_private.pem, backend/.keys/jwt_public.pem   RS256 signing keys
+  backend/.keys/metrics_token                                   Prometheus scrape token
   backend/.env                                                  SQLite dev settings
 
 Both paths are gitignored. Run from the repository root:
     python scripts/dev_setup.py
 """
 import secrets
+import string
 import sys
 from pathlib import Path
 
@@ -42,6 +44,26 @@ def write_keys() -> None:
     print(f"wrote RS256 keys to {KEYS}")
 
 
+def write_metrics_token() -> None:
+    path = KEYS / "metrics_token"
+    if path.exists():
+        print(f"metrics token exists: {path}")
+        return
+    KEYS.mkdir(exist_ok=True)
+    path.write_text(secrets.token_urlsafe(32), encoding="utf-8")
+    print(f"wrote Prometheus scrape token to {path}")
+
+
+def strong_password() -> str:
+    """16 characters with upper, lower, digit and symbol (the app's password policy)."""
+    rng = secrets.SystemRandom()
+    chars = [rng.choice(string.ascii_uppercase), rng.choice(string.ascii_lowercase),
+             rng.choice(string.digits), rng.choice("!@#%^*-_+=")]
+    chars += [rng.choice(string.ascii_letters + string.digits) for _ in range(12)]
+    rng.shuffle(chars)
+    return "".join(chars)
+
+
 def write_env() -> None:
     if ENV_FILE.exists():
         print(f"{ENV_FILE} exists, leaving it unchanged")
@@ -71,7 +93,7 @@ def write_env() -> None:
                 "# Used only by scripts/seed_demo_data.py. Random per machine; log in as 'admin'",
                 "# with SEED_ADMIN_PASSWORD.",
                 *[
-                    f"SEED_{role}_PASSWORD={secrets.token_urlsafe(12)}"
+                    f"SEED_{role}_PASSWORD={strong_password()}"
                     for role in ("ADMIN", "SAFETY", "ML", "QA", "REVIEWER", "VIEWER")
                 ],
                 "SEED_EMAIL_DOMAIN=redteam.local",
@@ -94,4 +116,5 @@ if __name__ == "__main__":
     if not BACKEND.is_dir():
         sys.exit(f"backend directory not found at {BACKEND}")
     write_keys()
+    write_metrics_token()
     write_env()

@@ -1,0 +1,10 @@
+apiVersion: 1
+
+# Loads the dashboard JSON files in this folder (mounted at /etc/grafana/provisioning/dashboards).
+providers:
+  - name: redteam
+    folder: ARTEF
+    type: file
+    disableDeletion: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

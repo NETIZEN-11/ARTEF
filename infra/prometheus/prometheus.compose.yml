@@ -1,0 +1,18 @@
+# Prometheus config for docker-compose.yml (prometheus.yml is the Kubernetes one).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # The API's /api/v1/metrics (app/monitoring/prometheus.py). The token file is
+  # backend/.keys/metrics_token, written by scripts/dev_setup.py.
+  - job_name: 'redteam-api'
+    metrics_path: /api/v1/metrics
+    authorization:
+      credentials_file: /etc/prometheus/metrics_token
+    static_configs:
+      - targets: ['backend:8000']

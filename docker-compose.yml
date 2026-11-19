@@ -204,7 +204,9 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/prometheus.compose.yml:/etc/prometheus/prometheus.yml
+      # Scrape token for /api/v1/metrics, written by scripts/dev_setup.py.
+      - ./backend/.keys/metrics_token:/etc/prometheus/metrics_token:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"

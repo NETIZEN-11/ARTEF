@@ -155,6 +155,9 @@ class Settings(BaseSettings):
     OTEL_METRICS_EXPORT_INTERVAL_MS: int = 60000
 
     PROMETHEUS_METRICS_PORT: int = 9090
+    # File holding the bearer token Prometheus uses to scrape /api/v1/metrics (written by
+    # scripts/dev_setup.py). Without it, /metrics only accepts an admin login.
+    METRICS_TOKEN_FILE: str = ".keys/metrics_token"
 
     ALERT_WEBHOOK_URL: str = ""
     ALERT_CRITICAL_WEBHOOK_URL: str = ""

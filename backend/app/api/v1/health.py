@@ -1,15 +1,17 @@
 import asyncio
+import hmac
+from pathlib import Path
 
 import boto3
 import chromadb
 import redis
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
 from app.core.config import get_settings
-from app.core.security import TokenData, require_role
+from app.core.security import decode_token
 
 router = APIRouter()
 settings = get_settings()
@@ -78,10 +80,26 @@ async def readiness_check(db: AsyncSession = Depends(get_db)):
     return {"ready": all_ready, "checks": checks, "required": required}
 
 
-@router.get("/metrics")
-async def metrics(
-    current_user: TokenData = Depends(require_role(["admin"])),
-):
-    from prometheus_client import generate_latest
+def _metrics_token() -> str:
+    try:
+        return Path(settings.METRICS_TOKEN_FILE).read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
 
-    return Response(content=generate_latest(), media_type="text/plain")
+
+@router.get("/metrics")
+async def metrics(request: Request, db: AsyncSession = Depends(get_db)):
+    """Prometheus metrics (see app/monitoring/prometheus.py). Accepts the scrape token from
+    METRICS_TOKEN_FILE or an admin access token."""
+    from app.monitoring.prometheus import render_metrics
+
+    auth = request.headers.get("authorization", "")
+    token = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
+    expected = _metrics_token()
+    if not (expected and token and hmac.compare_digest(token, expected)):
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated", headers={"WWW-Authenticate": "Bearer"})
+        if "admin" not in decode_token(token).roles:
+            raise HTTPException(status_code=403, detail="Insufficient role permissions")
+
+    return Response(content=await render_metrics(db), media_type="text/plain; version=0.0.4")
