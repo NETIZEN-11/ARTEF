@@ -222,12 +222,12 @@ export default function RunsPage() {
                           className="cursor-pointer"
                           onClick={() => router.push(`/runs/${run.id}`)}
                         >
-                          <TableCell className="font-mono text-sm">{run.id.slice(0, 8)}...</TableCell>
+                          <TableCell className="font-mono text-sm">{run.id?.slice(0, 8) || "N/A"}...</TableCell>
                           <TableCell className="text-sm" title={run.target_agent_id}>
-                            {run.target_agent_name ?? `${run.target_agent_id.slice(0, 8)}...`}
+                            {run.target_agent_name ?? `${run.target_agent_id?.slice(0, 8) || "N/A"}...`}
                           </TableCell>
                           <TableCell className="text-sm" title={run.suite_id}>
-                            {run.suite_name ?? `${run.suite_id.slice(0, 8)}...`} (v{run.suite_version})
+                            {run.suite_name ?? `${run.suite_id?.slice(0, 8) || "N/A"}...`} (v{run.suite_version})
                           </TableCell>
                           <TableCell>
                             <span

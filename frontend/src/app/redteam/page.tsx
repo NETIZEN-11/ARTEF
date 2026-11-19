@@ -411,8 +411,8 @@ export default function RedTeamPage() {
                           <tbody>
                             {attackHistory.map((session) => (
                               <tr key={session.id} className="border-b hover:bg-muted/50">
-                                <td className="p-4 font-mono text-sm">{session.id.slice(0, 8)}...</td>
-                                <td className="p-4 font-mono text-sm">{session.target_agent_id.slice(0, 8)}...</td>
+                                <td className="p-4 font-mono text-sm">{session.id?.slice(0, 8) || "N/A"}...</td>
+                                <td className="p-4 font-mono text-sm">{session.target_agent_id?.slice(0, 8) || "N/A"}...</td>
                                 <td className="p-4">
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                     session.status === "completed" ? "bg-green-100 text-green-800" :

@@ -254,7 +254,7 @@ function AgentCard({
               <div className="flex items-center gap-6 text-sm pt-1 border-t border-border flex-wrap">
                 <div>
                   <span className="text-muted-foreground">Agent ID:</span>
-                  <code className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{agent.id.slice(0, 8)}…</code>
+                  <code className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{agent.id?.slice(0, 8) || "N/A"}…</code>
                   <button onClick={() => copyToClipboard(agent.id)} className="ml-1"><Copy className="w-3 h-3 inline text-muted-foreground hover:text-foreground" /></button>
                 </div>
                 <div><span className="text-muted-foreground">Created:</span><span className="ml-1.5">{formatDate(agent.created_at)}</span></div>
