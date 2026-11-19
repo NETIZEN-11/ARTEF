@@ -2,10 +2,10 @@
 
 Live log of work on this repository (times in IST). Read CURRENT STATE and NEXT STEPS first.
 
-## CURRENT STATE (2026-11-19 14:25 IST)
+## CURRENT STATE (2026-11-20 IST)
 
 - Branch `fix/remove-placeholder-data` (fork `Harishrs2006/ARTEF`), merged with the latest
-  `NETIZEN-11/main` (722306f). Waiting for a pull request into `NETIZEN-11/ARTEF:main`.
+  `NETIZEN-11/main` (722306f). PR #4 open: https://github.com/NETIZEN-11/ARTEF/pull/4
 - Merged earlier: PR #1 (core pipeline), PR #2 (credits), PR #3 (benchmarks, analytics, runs list).
 - Checks on the merged branch: 256 backend tests pass, ruff CI gate passes, frontend
   typecheck/lint/31 tests/build pass.
@@ -16,7 +16,7 @@ Live log of work on this repository (times in IST). Read CURRENT STATE and NEXT 
 
 ## NEXT STEPS
 
-1. Open the PR for `fix/remove-placeholder-data` into `NETIZEN-11/ARTEF:main` and get it merged.
+1. Get PR #4 reviewed and merged by Nitesh (NETIZEN-11).
 2. Ask Nitesh for the cloud URLs (Vercel frontend, backend host) and whether the cloud admin
    password that was printed in `scripts/start_dev.ps1` has been changed.
 3. Rehearse the demo in `docs/VIVA_GUIDE.md` section 10 once before the viva.
@@ -39,3 +39,4 @@ Live log of work on this repository (times in IST). Read CURRENT STATE and NEXT 
   from start_dev.ps1. Added "Seeded Regressions" suite to the local database for the demo.
 - 2026-11-19 14:25 IST: Added docs/VIVA_GUIDE.md (project summary, architecture, flow, run
   steps in VS Code, demo script, 40 practice questions) and this log.
+- 2026-11-20 IST: Opened PR #4 (fix/remove-placeholder-data) into NETIZEN-11/ARTEF:main; asked in the PR to rotate the cloud admin password.
