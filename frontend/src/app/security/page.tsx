@@ -149,7 +149,7 @@ export default function SecurityPage() {
           <TabsContent value="monitoring">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between"><CardTitle>Security Dashboard</CardTitle><Button size="sm" variant="outline" onClick={fetchDashboard}>Refresh</Button></CardHeader>
-              <CardContent>{dashboard ? <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">{JSON.stringify(dashboard, null, 2)}</pre> : <div className="text-center py-8 text-muted-foreground"><Activity className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>Monitoring — tracks guardrail hits, auth failures, cost anomalies</p><p className="text-sm">Integrates with Prometheus + Grafana</p></div>}</CardContent>
+              <CardContent>{dashboard ? <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">{JSON.stringify(dashboard, null, 2)}</pre> : <div className="text-center py-8 text-muted-foreground"><Activity className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>Monitoring tracks guardrail matches, failed logins and rate-limit hits</p><p className="text-sm">Counted since the API started; Prometheus metrics are at /api/v1/metrics</p></div>}</CardContent>
             </Card>
           </TabsContent>
         </Tabs>

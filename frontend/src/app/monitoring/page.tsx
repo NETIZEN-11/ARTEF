@@ -63,7 +63,7 @@ export default function MonitoringPage() {
           <Card>
             <CardHeader><CardTitle>Security Dashboard</CardTitle></CardHeader>
             <CardContent>
-              {dashboard ? <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">{JSON.stringify(dashboard, null, 2)}</pre> : <div className="text-center py-8 text-muted-foreground"><Activity className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>No data yet — monitoring tracks guardrails, auth, costs</p><p className="text-sm">Integrated with Prometheus (9090) + Grafana (3001)</p></div>}
+              {dashboard ? <pre className="bg-muted p-3 rounded text-xs overflow-auto max-h-96">{JSON.stringify(dashboard, null, 2)}</pre> : <div className="text-center py-8 text-muted-foreground"><Activity className="h-12 w-12 mx-auto mb-2 opacity-30" /><p>No data yet — monitoring tracks guardrails, auth, costs</p><p className="text-sm">Counts failed logins, rate-limit hits and guardrail matches since the API started</p></div>}
             </CardContent>
           </Card>
           <Card>
@@ -86,9 +86,9 @@ export default function MonitoringPage() {
         <Card>
           <CardHeader><CardTitle>Observability Stack</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
-            <div className="p-3 border rounded"><p className="font-medium">Prometheus</p><p className="text-muted-foreground">Metrics at :9090 — latency, error rate, queue depth, cost</p></div>
-            <div className="p-3 border rounded"><p className="font-medium">Grafana</p><p className="text-muted-foreground">Dashboards at :3001 — 8 panels (runs, pass rate, regressions, cost)</p></div>
-            <div className="p-3 border rounded"><p className="font-medium">OTel</p><p className="text-muted-foreground">Distributed tracing — 10% sampling, JSON logs</p></div>
+            <div className="p-3 border rounded"><p className="font-medium">Prometheus</p><p className="text-muted-foreground">/api/v1/metrics: runs, 24h pass rate, open reviews, regressions and critical findings, run duration, cost. Scraped on :9090 under Docker Compose.</p></div>
+            <div className="p-3 border rounded"><p className="font-medium">Grafana</p><p className="text-muted-foreground">:3001 under Docker Compose: &quot;RedTeam Framework Overview&quot;, 8 panels built from those metrics.</p></div>
+            <div className="p-3 border rounded"><p className="font-medium">Security events</p><p className="text-muted-foreground">This page: failed logins, rate-limit hits and guardrail matches, kept in memory since the API started.</p></div>
           </CardContent>
         </Card>
       </div>

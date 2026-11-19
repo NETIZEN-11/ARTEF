@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -358,29 +359,15 @@ const [error, setError] = useState<string | null>(null);
 
           <TabsContent value="trends">
             <Card>
-              <CardHeader><CardTitle>Evaluation Trends (Last 30 Days)</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Pass Rate Trend</h4>
-                    <p className="text-sm text-muted-foreground">Chart would show pass rate over time</p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Regression Count Trend</h4>
-                    <p className="text-sm text-muted-foreground">Chart would show regressions over time</p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Cost Trend</h4>
-                    <p className="text-sm text-muted-foreground">Chart would show cost over time</p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h4 className="font-medium mb-2">Latency Trend</h4>
-                    <p className="text-sm text-muted-foreground">Chart would show latency over time</p>
-                  </div>
-                </div>
-                <p className="text-center text-muted-foreground mt-4">
-                  Connect to Grafana for full visualization dashboards
+              <CardHeader><CardTitle>Evaluation Trends</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Pass rate, regressions, cost and latency over time are charted from stored run
+                  results on the Analytics page.
                 </p>
+                <Button asChild variant="outline">
+                  <Link href="/analytics"><TrendingUp className="mr-2 h-4 w-4" />Open Analytics</Link>
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
