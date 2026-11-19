@@ -57,10 +57,25 @@ export default function NewRunPage() {
         api.get("/suites"),
         api.get("/agents"),
       ]);
-      setSuites(suitesRes.data);
-      setAgents(agentsRes.data);
-    } catch (error) {
+      console.log("Suites response:", suitesRes.data);
+      console.log("Agents response:", agentsRes.data);
+      
+      // Ensure we have arrays
+      const suitesData = Array.isArray(suitesRes.data) ? suitesRes.data : [];
+      const agentsData = Array.isArray(agentsRes.data) ? agentsRes.data : [];
+      
+      setSuites(suitesData);
+      setAgents(agentsData);
+      
+      if (suitesData.length === 0) {
+        setError("No test suites found. Please create a test suite first.");
+      }
+      if (agentsData.length === 0) {
+        setError("No target agents found. Please create a target agent first.");
+      }
+    } catch (error: any) {
       console.error("Failed to fetch data:", error);
+      setError(error?.response?.data?.detail || "Failed to load test suites and agents. Please try refreshing the page.");
     } finally {
       setLoading(false);
     }
@@ -69,9 +84,12 @@ export default function NewRunPage() {
   const fetchBaselines = async (suiteId: string) => {
     try {
       const res = await api.get(`/baselines?suite_id=${suiteId}`);
-      setBaselines(res.data);
+      console.log("Baselines response:", res.data);
+      const baselinesData = Array.isArray(res.data) ? res.data : [];
+      setBaselines(baselinesData);
     } catch (error) {
       console.error("Failed to fetch baselines:", error);
+      setBaselines([]);
     }
   };
 
@@ -100,15 +118,42 @@ export default function NewRunPage() {
     setError("");
 
     try {
-      const res = await api.post("/runs", {
+      // Only include baseline_id if it's not empty
+      const payload: any = {
         suite_id: formData.suite_id,
         target_agent_id: formData.target_agent_id,
         suite_version: formData.suite_version,
-        baseline_id: formData.baseline_id || undefined,
-      });
+      };
+      
+      // Only add baseline_id if it's a valid UUID (not empty string)
+      if (formData.baseline_id && formData.baseline_id.trim() !== "") {
+        payload.baseline_id = formData.baseline_id;
+      }
+      
+      const res = await api.post("/runs", payload);
       router.push(`/runs/${res.data.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create evaluation run");
+      console.error("Failed to create run:", err);
+      
+      // Handle Pydantic validation errors
+      if (err.response?.status === 422 && err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        
+        // Check if it's an array of validation errors (Pydantic format)
+        if (Array.isArray(detail)) {
+          const errorMessages = detail.map((error: any) => {
+            const field = error.loc?.[error.loc.length - 1] || 'unknown';
+            return `${field}: ${error.msg}`;
+          }).join(', ');
+          setError(`Validation error: ${errorMessages}`);
+        } else if (typeof detail === 'string') {
+          setError(detail);
+        } else {
+          setError("Validation failed. Please check your inputs.");
+        }
+      } else {
+        setError(err.response?.data?.detail || err.message || "Failed to create evaluation run");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -180,15 +225,21 @@ export default function NewRunPage() {
                   >
                     <SelectTrigger><SelectValue placeholder="Select version" /></SelectTrigger>
                     <SelectContent>
-                      {formData.suite_id && suites.find((s) => s.id === formData.suite_id)?.version
-                        ? Array.from({ length: ((suites.find((s) => s.id === formData.suite_id)?.version) || 1) }, (_, i) => (
+                      {formData.suite_id && suites.find((s) => s.id === formData.suite_id) ? (
+                        Array.from(
+                          { length: suites.find((s) => s.id === formData.suite_id)!.version },
+                          (_, i) => (
                             <SelectItem key={i + 1} value={String(i + 1)}>
                               v{i + 1}
                             </SelectItem>
-                          ))
-                        : null
-                      }
-                      </SelectContent>
+                          )
+                        )
+                      ) : (
+                        <SelectItem value="1" disabled>
+                          Select a suite first
+                        </SelectItem>
+                      )}
+                    </SelectContent>
                   </Select>
                 </div>
 

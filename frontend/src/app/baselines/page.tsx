@@ -168,9 +168,9 @@ export default function BaselinesPage() {
                     {baselines.map((baseline) => (
                       <TableRow key={baseline.id}>
                         <TableCell className="font-medium">{baseline.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{baseline.suite_id.slice(0, 8)}...</TableCell>
+                        <TableCell className="font-mono text-sm">{baseline.suite_id?.slice(0, 8) || "N/A"}...</TableCell>
                         <TableCell>v{baseline.suite_version}</TableCell>
-                        <TableCell className="font-mono text-sm">{baseline.run_id.slice(0, 8)}...</TableCell>
+                        <TableCell className="font-mono text-sm">{baseline.run_id?.slice(0, 8) || "N/A"}...</TableCell>
                         <TableCell>
                           <Badge variant={baseline.is_active ? "default" : "secondary"}>
                             {baseline.is_active ? "Active" : "Inactive"}

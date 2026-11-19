@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 
-from app.api.deps import TokenData, get_case_repo, get_suite_repo, require_role
+from app.api.deps import TokenData, get_case_repo, get_run_repo, get_suite_repo, require_role
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.domain.enums import TestCaseCategory, TestCaseSeverity
@@ -404,8 +404,23 @@ async def import_suite_version(
 async def delete_suite(
     suite_id: UUID,
     suite_repo: TestSuiteRepository = Depends(get_suite_repo),
+    run_repo=Depends(get_run_repo),
     current_user: TokenData = Depends(require_role(["admin"])),
 ):
+    # Check if any runs reference this suite
+    from app.models.run import Run
+    from sqlalchemy import select
+    result = await run_repo.session.execute(
+        select(Run).where(Run.suite_id == str(suite_id)).limit(1)
+    )
+    existing_run = result.scalar_one_or_none()
+    if existing_run:
+        from app.core.exceptions import ValidationError
+        raise ValidationError(
+            "Cannot delete suite with existing evaluation runs. "
+            "Please delete the associated runs first or consider archiving the suite instead."
+        )
+    
     deleted = await suite_repo.delete(suite_id)
     if not deleted:
         raise NotFoundError("TestSuite", str(suite_id))

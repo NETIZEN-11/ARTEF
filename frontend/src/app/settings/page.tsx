@@ -521,7 +521,7 @@ export default function SettingsPage() {
                             {flag.description && <p className="text-sm text-muted-foreground">{flag.description}</p>}
                             <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                               <span>Rollout: {flag.rollout_percentage}%</span>
-                              <span>Target Roles: {flag.target_roles.length > 0 ? flag.target_roles.join(", ") : "All"}</span>
+                              <span>Target Roles: {flag.target_roles?.length > 0 ? flag.target_roles.join(", ") : "All"}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

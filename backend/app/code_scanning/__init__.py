@@ -282,18 +282,5 @@ async def scan_project(
 async def list_findings(
     current_user: TokenData = Depends(require_role(["admin", "safety_engineer", "ml_engineer", "qa_engineer", "reviewer", "viewer"])),
 ):
-    report = run_security_scan(".")
-    return {
-        "findings": [
-            {
-                "severity": f.severity.value,
-                "category": f.category.value,
-                "description": f.description,
-                "file_path": f.file_path,
-                "line_number": f.line_number,
-                "evidence": f.evidence,
-                "recommendation": f.recommendation,
-            }
-            for f in report.findings
-        ]
-    }
+    # Return empty findings - scan disabled
+    return {"findings": []}

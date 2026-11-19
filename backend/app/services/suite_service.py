@@ -24,6 +24,7 @@ SUITE_SCHEMA = {
         "schema_version": {"type": "string", "pattern": "^\\d+\\.\\d+$"},
         "test_cases": {
             "type": "array",
+            "minItems": 0,
             "items": {
                 "type": "object",
                 "required": ["test_case_id", "category", "severity", "input", "expected_behavior"],

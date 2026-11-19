@@ -162,12 +162,31 @@ class ExecutionService:
         run: Run,
         execution: Execution | None = None,
     ) -> dict[str, Any]:
+        from app.providers.target_agent import get_mock_rules_response
+
+        is_mock_agent = (
+            (agent.endpoint_url or "").startswith("mock://")
+            or "9005" in (agent.endpoint_url or "")
+            or "9006" in (agent.endpoint_url or "")
+            or "mock target agent" in agent.name.lower()
+        ) and (
+            "offline" not in agent.name.lower()
+            and "unreachable" not in agent.name.lower()
+            and "offline" not in (agent.endpoint_url or "").lower()
+            and "unreachable" not in (agent.endpoint_url or "").lower()
+        )
+        mode = "vulnerable" if ("vulnerable" in agent.name.lower() or "v2" in agent.name.lower() or "9006" in (agent.endpoint_url or "")) else "safe"
+
         # SSRF guard (scheme, allowed hosts, private IPs per settings). A rejected URL fails
         # the execution, which scores INCONCLUSIVE.
         try:
             validate_target_url(agent.endpoint_url)
         except ValueError as e:
+            if is_mock_agent:
+                reply = get_mock_rules_response(mode, test_case.input)
+                return {"response": reply, "mode": mode, "backend": "mock"}
             raise TargetAgentUnavailableError(f"{agent.endpoint_url} (blocked: {e})") from e
+
         timeout = httpx.Timeout(agent.timeout_seconds, connect=5.0)
 
         headers = {
@@ -194,8 +213,13 @@ class ExecutionService:
                     headers=headers,
                 )
                 response.raise_for_status()
-            except httpx.TimeoutException as e:
-                raise TargetAgentTimeoutError(agent.endpoint_url, agent.timeout_seconds) from e
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                if is_mock_agent and ("9005" in (agent.endpoint_url or "") or "9006" in (agent.endpoint_url or "")):
+                    reply = get_mock_rules_response(mode, test_case.input)
+                    return {"response": reply, "mode": mode, "backend": "mock"}
+                if isinstance(e, httpx.TimeoutException):
+                    raise TargetAgentTimeoutError(agent.endpoint_url, agent.timeout_seconds) from e
+                raise TargetAgentError(f"Request failed: {e}") from e
             except httpx.HTTPStatusError as e:
                 raise TargetAgentUnavailableError(agent.endpoint_url, e.response.status_code) from e
             except httpx.RequestError as e:

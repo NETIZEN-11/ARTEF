@@ -98,9 +98,8 @@ export default function DashboardPage() {
 
   const { data, loading, error, refresh } = useAsyncResource<DashboardData>(
     async (signal) => {
-      // All three requests are independent, so they are issued in parallel.
-      // A failing endpoint degrades that single card instead of blanking the
-      // whole dashboard.
+      // OPTIMIZATION: Issue three independent requests that fail gracefully.
+      // If one endpoint is slow, others can still complete and render.
       const [statsResult, runsResult, monitoringResult] = await Promise.allSettled([
         api.get<Stats>("/runs/stats", { signal }),
         api.get<RunSummary[]>("/runs?limit=5", { signal }),
@@ -454,7 +453,7 @@ export default function DashboardPage() {
                         className="border-b hover:bg-muted/50 cursor-pointer"
                         onClick={() => router.push(`/runs/${run.id}`)}
                       >
-                        <td className="p-4 font-mono text-sm">{run.id.slice(0, 8)}...</td>
+                        <td className="p-4 font-mono text-sm">{run.id?.slice(0, 8) || "N/A"}...</td>
                         <td className="p-4">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status)}`}

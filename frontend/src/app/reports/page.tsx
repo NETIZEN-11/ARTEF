@@ -108,7 +108,7 @@ const [error, setError] = useState<string | null>(null);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `report-${report.run_id.slice(0, 8)}-${report.id.slice(0, 8)}.${report.format}`;
+    a.download = `report-${report.run_id?.slice(0, 8) || "run"}-${report.id?.slice(0, 8) || "rep"}.${report.format}`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -147,7 +147,7 @@ const [error, setError] = useState<string | null>(null);
                   <SelectContent>
                     {runs.map((run) => (
                       <SelectItem key={run.id} value={run.id}>
-                        {run.id.slice(0, 8)}... - {run.status} - {formatDate(run.created_at)}
+                        {run.id?.slice(0, 8) || "N/A"}... - {run.status} - {formatDate(run.created_at)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -171,7 +171,7 @@ const [error, setError] = useState<string | null>(null);
             </div>
             {selectedRun && (
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium">Selected Run: {selectedRun.id.slice(0, 8)}...</p>
+                <p className="font-medium">Selected Run: {selectedRun.id?.slice(0, 8) || "N/A"}...</p>
                 <div className="flex gap-4 text-sm text-muted-foreground mt-1 flex-wrap">
                   <span>Tests: {selectedRun.total_tests}</span>
                   <span>Passed: {selectedRun.passed_count}</span>
@@ -222,8 +222,8 @@ const [error, setError] = useState<string | null>(null);
                   <TableBody>
                     {reports.map((report) => (
                       <TableRow key={report.id}>
-                        <TableCell className="font-mono text-sm">{report.id.slice(0, 8)}...</TableCell>
-                        <TableCell className="font-mono text-sm">{report.run_id.slice(0, 8)}...</TableCell>
+                        <TableCell className="font-mono text-sm">{report.id?.slice(0, 8) || "N/A"}...</TableCell>
+                        <TableCell className="font-mono text-sm">{report.run_id?.slice(0, 8) || "N/A"}...</TableCell>
                         <TableCell><Badge variant="secondary">{report.type}</Badge></TableCell>
                         <TableCell><Badge variant="outline">{report.format}</Badge></TableCell>
                         <TableCell>
@@ -234,7 +234,7 @@ const [error, setError] = useState<string | null>(null);
                             {report.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{report.generated_by.slice(0, 8)}</TableCell>
+                        <TableCell className="font-mono text-xs">{report.generated_by?.slice(0, 8) || "System"}</TableCell>
                         <TableCell>{formatDate(report.generated_at)}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => handleDownloadReport(report)}>
@@ -328,7 +328,7 @@ const [error, setError] = useState<string | null>(null);
                     <TableBody>
                       {runs.slice(0, 10).map((run) => (
                         <TableRow key={run.id}>
-                          <TableCell className="font-mono text-sm">{run.id.slice(0, 8)}...</TableCell>
+                          <TableCell className="font-mono text-sm">{run.id?.slice(0, 8) || "N/A"}...</TableCell>
                           <TableCell>
                             <Badge variant={run.status === "completed" ? "default" : "destructive"}>
                               {run.status}
