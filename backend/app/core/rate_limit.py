@@ -218,6 +218,9 @@ async def rate_limit_dependency(
     request.state.rate_limit_reset = retry_after
 
     if not allowed:
+        from app.monitoring import security_metrics
+
+        security_metrics.record_rate_limit_hit(request.url.path, client_ip)
         logger.warning(
             "rate_limit_exceeded",
             client_ip=client_ip,
@@ -254,6 +257,9 @@ def rate_limit(limit: int = None, window: int = None):
                     key, limit, window
                 )
                 if not allowed:
+                    from app.monitoring import security_metrics
+
+                    security_metrics.record_rate_limit_hit(request.url.path, client_ip)
                     raise HTTPException(
                         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                         detail="Rate limit exceeded",

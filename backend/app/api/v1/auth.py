@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -53,12 +53,17 @@ class RegisterRequest(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 async def login(
     request: LoginRequest,
+    http_request: Request,
     db: AsyncSession = Depends(get_db),
     user_repo: UserRepository = Depends(get_user_repo),
 ):
     user = await user_repo.get_by_email_or_username(request.username)
     if not user or not verify_password(request.password, user.hashed_password):
+        from app.core.rate_limit import _get_client_ip
+        from app.monitoring import security_metrics
+
         logger.warning("login_failed", username=request.username)
+        security_metrics.record_auth_failure("password", _get_client_ip(http_request))
         raise AuthenticationError("Invalid credentials")
 
     if not user.is_active:
