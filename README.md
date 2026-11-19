@@ -337,15 +337,15 @@ The seed script requires `SEED_*` settings (user passwords, demo agent URLs, an 
 uvicorn app.main:app --port 8000
 
 # Demo target agents: the AI systems under test (from the repo root)
-python demo/target_agent.py --mode safe --port 9001
-python demo/target_agent.py --mode vulnerable --port 9002
+python demo/target_agent.py --mode safe --port 9005
+python demo/target_agent.py --mode vulnerable --port 9006
 
 # Frontend (from frontend/)
 pnpm install && pnpm dev           # http://localhost:3000
 ```
 On Windows, `powershell -ExecutionPolicy Bypass -File scripts\start_dev.ps1` starts all four
-in their own windows, with evaluations running inside the API (no Redis needed). It skips any
-service whose port is already in use.
+in their own windows (API on 8000, demo agents on 9005/9006, website on http://localhost:3002), with
+evaluations running inside the API (no Redis needed). It skips any service whose port is already in use.
 
 **④ Run evaluations.** Choose one way to execute runs:
 

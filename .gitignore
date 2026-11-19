@@ -59,6 +59,8 @@ coverage.xml
 
 # Secrets
 *.pem
+# Local secrets written by scripts/dev_setup.py (JWT keys, Prometheus scrape token)
+backend/.keys/
 *.key
 *.crt
 secrets/

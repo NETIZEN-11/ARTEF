@@ -50,7 +50,7 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 Write-Host ""
 if (Test-PortInUse 8000) {
-    Write-Host "Ready. Open http://localhost:3002 and sign in as 'admin' with SEED_ADMIN_PASSWORD from backend\.env (or AdminPass123!)" -ForegroundColor Cyan
+    Write-Host "Ready. Open http://localhost:3002 and sign in as 'admin' with SEED_ADMIN_PASSWORD from backend\.env" -ForegroundColor Cyan
 } else {
     Write-Host "The API did not start. Check the 'ARTEF - Backend API' window for the error." -ForegroundColor Red
 }

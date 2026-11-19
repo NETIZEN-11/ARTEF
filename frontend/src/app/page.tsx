@@ -224,7 +224,7 @@ export default function LandingPage() {
               See How ARTEF Scores Adversarial Prompts
             </h2>
             <p className="mt-3 text-gray-500 text-base">
-              Pre-recorded examples of how ARTEF classifies and scores each attack category.
+              Examples of how ARTEF catches each attack category (illustrations, not recorded results).
               Run them against your own agent from the evaluation console to get live results.
             </p>
           </div>
@@ -252,13 +252,9 @@ export default function LandingPage() {
                 <span className="w-3 h-3 rounded-full bg-red-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block" />
                 <span className="w-3 h-3 rounded-full bg-green-400 inline-block" />
-                <span className="ml-3 text-gray-400 font-sans font-medium">ARTEF Probe Console - {selectedScenario.vector}</span>
+                <span className="ml-3 text-gray-400 font-sans font-medium">Example scenario - {selectedScenario.vector}</span>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-emerald-400 flex items-center space-x-1">
-                  <Activity className="w-3.5 h-3.5 animate-pulse" />
-                  <span>{selectedScenario.latency}</span>
-                </span>
                 <span className="px-2.5 py-0.5 rounded bg-blue-900/40 text-blue-300 border border-blue-700/40 font-semibold">
                   {selectedScenario.badge}
                 </span>
@@ -276,7 +272,7 @@ export default function LandingPage() {
                   &quot;{selectedScenario.attackPrompt}&quot;
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>Threat Classifier: <span className="font-bold text-amber-600">{selectedScenario.score} Score</span></span>
+                  <span>Caught by: <span className="font-bold text-amber-600">{selectedScenario.check}</span></span>
                   <span className="font-mono">{selectedScenario.vector}</span>
                 </div>
               </div>
@@ -285,24 +281,24 @@ export default function LandingPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-emerald-700 text-xs font-bold uppercase tracking-wider">
                     <ShieldCheck className="w-4 h-4" />
-                    <span>ARTEF Guardrail Verdict</span>
+                    <span>ARTEF Verdict</span>
                   </div>
                   <span className="px-3 py-0.5 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-300">
                     {selectedScenario.status}
                   </span>
                 </div>
                 <div className="rounded-xl bg-white border border-emerald-200 p-4 font-mono text-sm text-emerald-800 leading-relaxed shadow-inner">
-                  <p className="text-xs text-emerald-500 mb-2 font-bold">Guardrail Trace</p>
+                  <p className="text-xs text-emerald-500 mb-2 font-bold">How ARTEF catches it</p>
                   &quot;{selectedScenario.defenseResponse}&quot;
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
-                    <div className="text-[11px] text-gray-400 uppercase font-semibold">Confidence</div>
-                    <div className="text-lg font-bold text-gray-900 mt-0.5">{selectedScenario.score}</div>
+                    <div className="text-[11px] text-gray-400 uppercase font-semibold">Check</div>
+                    <div className="text-sm font-bold text-gray-900 mt-0.5">{selectedScenario.check}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-white border border-blue-100 shadow-sm">
                     <div className="text-[11px] text-gray-400 uppercase font-semibold">Action</div>
-                    <div className="text-lg font-bold text-emerald-600 mt-0.5">Drop &amp; Log</div>
+                    <div className="text-lg font-bold text-emerald-600 mt-0.5">{selectedScenario.status}</div>
                   </div>
                 </div>
               </div>
