@@ -30,15 +30,27 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+# Never commit environment files in any subdirectory
+backend/.env
+backend/.env.*
+
+# JWT / TLS keys — generated locally by scripts/generate_keys.py
+backend/.keys/
+*.pem
+*.key
+*.crt
+secrets/
 
 # Logs
 *.log
 logs/
 
-# Database
+# Database files — development SQLite databases must not be committed
 *.db
 *.sqlite
 *.sqlite3
+backend/redteam.db
+backend/test_regression.db
 
 # Test coverage
 htmlcov/
@@ -57,10 +69,7 @@ coverage.xml
 # Docker
 .docker/
 
-# Secrets
-*.pem
-*.key
-*.crt
+# Secrets (covered above near backend/.keys — kept here as top-level fallback)
 secrets/
 
 # Build artifacts

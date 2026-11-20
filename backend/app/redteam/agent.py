@@ -147,7 +147,10 @@ class RedTeamAgent:
             {
                 "continue": "plan",
                 "objective_achieved": "final_verdict",
-                "refused": "final_verdict",
+                # "refused" is intentionally not wired: a single refusal does not end the
+                # session; the agent escalates to a harder tactic instead.  When the full
+                # turn budget is exhausted without a compromise the final verdict is
+                # resolved in _inconclusive (PASS if any turn was refused, else INCONCLUSIVE).
                 "max_turns": "inconclusive",
             },
         )
@@ -332,8 +335,12 @@ class RedTeamAgent:
         if state.current_turn == 1:
             prompt = state.strategy.initial_prompt
         else:
+            # Build an escalation list that excludes the already-used initial prompt, then
+            # pick the next tactic in sequence.  Using min() ensures we never go past the
+            # end of the list (no cycling back to already-tried prompts).
             tactics = [t for t in attack_ladder(state.strategy.category) if t != state.strategy.initial_prompt]
-            prompt = tactics[(state.current_turn - 2) % len(tactics)]
+            tactic_index = min(state.current_turn - 2, len(tactics) - 1)
+            prompt = tactics[tactic_index]
 
         state.turns.append(
             Turn(

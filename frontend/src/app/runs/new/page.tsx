@@ -47,7 +47,7 @@ export default function NewRunPage() {
   const [formData, setFormData] = useState({
     suite_id: "",
     target_agent_id: "",
-    baseline_id: "",
+    baseline_id: "none",
     suite_version: 1,
   });
 
@@ -101,11 +101,19 @@ export default function NewRunPage() {
   useEffect(() => {
     if (formData.suite_id) {
       fetchBaselines(formData.suite_id);
+      const selectedSuite = suites.find((s) => s.id === formData.suite_id);
+      if (selectedSuite) {
+        setFormData((prev) => ({
+          ...prev,
+          suite_version: selectedSuite.version,
+          baseline_id: "none",
+        }));
+      }
     } else {
       setBaselines([]);
-      setFormData((prev) => ({ ...prev, baseline_id: "" }));
+      setFormData((prev) => ({ ...prev, baseline_id: "none" }));
     }
-  }, [formData.suite_id]);
+  }, [formData.suite_id, suites]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,15 +126,14 @@ export default function NewRunPage() {
     setError("");
 
     try {
-      // Only include baseline_id if it's not empty
       const payload: any = {
         suite_id: formData.suite_id,
         target_agent_id: formData.target_agent_id,
         suite_version: formData.suite_version,
       };
       
-      // Only add baseline_id if it's a valid UUID (not empty string)
-      if (formData.baseline_id && formData.baseline_id.trim() !== "") {
+      // Only add baseline_id if a real baseline UUID is chosen (not "none" or empty)
+      if (formData.baseline_id && formData.baseline_id !== "none" && formData.baseline_id.trim() !== "") {
         payload.baseline_id = formData.baseline_id;
       }
       
@@ -270,7 +277,7 @@ export default function NewRunPage() {
                   >
                     <SelectTrigger><SelectValue placeholder="Select a baseline (optional)" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No baseline</SelectItem>
+                      <SelectItem value="none">No baseline (Raw Evaluation)</SelectItem>
                       {baselines.map((baseline) => (
                         <SelectItem key={baseline.id} value={baseline.id}>
                           {baseline.name} (v{baseline.suite_version})
@@ -278,6 +285,13 @@ export default function NewRunPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {!formData.suite_id
+                      ? "Select a test suite to view available golden baselines."
+                      : baselines.length === 0
+                      ? "No approved baselines found for this suite yet. The run will establish raw scores."
+                      : "Comparing against an approved baseline enables regression detection & CI safety gating."}
+                  </p>
                 </div>
               </div>
 

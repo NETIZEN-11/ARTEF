@@ -37,7 +37,7 @@ jobs:
         # Test settings come from backend/tests/conftest.py (no secrets needed).
         env:
           PYTHONIOENCODING: utf-8
-        run: pytest backend/tests -q -p no:cacheprovider
+        run: pytest backend/tests -q -p no:cacheprovider --cov=app --cov-report=xml --cov-report=term-missing --cov-fail-under=60
 
   migrations:
     name: Database migrations match the models (PostgreSQL)

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 ARTEF CLI - Command-line interface for Agent Red-Teaming & Evaluation Framework
 
@@ -126,13 +126,13 @@ test_cases:
     
     console.print(f"\n[green]SUCCESS[/green] Created project structure:")
     console.print(f"  {name}/")
-    console.print(f"  â”œâ”€â”€ artef.yaml")
-    console.print(f"  â”œâ”€â”€ suites/")
+    console.print(f"  ├── artef.yaml")
+    console.print(f"  ├── suites/")
     if example:
-        console.print(f"  â”‚   â””â”€â”€ {example}.yaml")
-    console.print(f"  â”œâ”€â”€ prompts/")
-    console.print(f"  â”œâ”€â”€ data/")
-    console.print(f"  â””â”€â”€ reports/")
+        console.print(f"  │   └── {example}.yaml")
+    console.print(f"  ├── prompts/")
+    console.print(f"  ├── data/")
+    console.print(f"  └── reports/")
     console.print(f"\n[bold]Next steps:[/bold]")
     console.print(f"  1. cd {name}")
     console.print(f"  2. Edit artef.yaml with your agent details")
@@ -166,10 +166,10 @@ def eval(agent: str, suite: str, baseline: Optional[str], output: str, output_fi
             success = asyncio.run(run_eval_impl(agent, suite, baseline))
             
         if success:
-            console.print("\n[bold green]âœ“ Evaluation passed[/bold green]")
+            console.print("\n[bold green]✓ Evaluation passed[/bold green]")
             sys.exit(0)
         else:
-            console.print("\n[bold red]âœ— Evaluation failed[/bold red]")
+            console.print("\n[bold red]✗ Evaluation failed[/bold red]")
             sys.exit(1)
             
     except Exception as e:
@@ -184,31 +184,10 @@ def eval(agent: str, suite: str, baseline: Optional[str], output: str, output_fi
 @click.option("--limit", default=10, help="Number of runs to show")
 def view(run_id: Optional[str], suite: Optional[str], agent: Optional[str], limit: int):
     """View evaluation results and history."""
-    if run_id:
-        console.print(f"[bold]Viewing run:[/bold] {run_id}")
-        console.print("[yellow]Note: Database integration required[/yellow]")
-    else:
-        console.print(f"[bold]Recent evaluation runs:[/bold]")
-        
-        table = Table(title="Evaluation History")
-        table.add_column("Run ID", style="cyan")
-        table.add_column("Agent", style="magenta")
-        table.add_column("Suite", style="green")
-        table.add_column("Status", style="bold")
-        table.add_column("Score")
-        table.add_column("Date")
-        
-        table.add_row(
-            "run-${RUN_ID}",
-            "${AGENT_NAME}",
-            "${SUITE_NAME}",
-            "[green]PASS[/green]",
-            "95%",
-            "${DATE}"
-        )
-        
-        console.print(table)
-        console.print(f"\n[yellow]Note: Database integration required for full functionality[/yellow]")
+    console.print("[bold yellow]? This command requires the ARTEF backend API to be running.[/bold yellow]")
+    console.print("Start the backend first:  [cyan]artef server[/cyan]")
+    console.print("Then query results via:    [cyan]http://localhost:8000/docs ? GET /api/v1/runs/[/cyan]")
+    sys.exit(1)
 
 
 @cli.group()
@@ -245,65 +224,33 @@ output:
 @click.option("--count", default=10, help="Number of attacks to generate")
 @click.option("--category", help="Attack category")
 def redteam_generate(count: int, category: Optional[str]):
-    """Generate adversarial test cases."""
-    console.print(f"[bold]Generating {count} adversarial test cases...[/bold]")
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
-        progress.add_task("Generating attacks...", total=None)
-        
-        console.print("[yellow]Note: Red team generator integration required[/yellow]")
-    
-    console.print(f"[green]SUCCESS[/green] Generated {count} test cases")
-    console.print("Output: redteam-suite.yaml")
+    """Generate adversarial test cases (requires backend API)."""
+    console.print("[bold yellow]? Not yet implemented in standalone CLI mode.[/bold yellow]")
+    console.print("Use the REST API instead:  [cyan]POST http://localhost:8000/api/v1/redteam/generate[/cyan]")
+    console.print("Or the web UI:             [cyan]http://localhost:3000/redteam[/cyan]")
+    sys.exit(1)
 
 
 @redteam.command("run")
 @click.option("--agent", required=True, help="Target agent")
 @click.option("--suite", help="Red team suite file")
 def redteam_run(agent: str, suite: Optional[str]):
-    """Execute red team attacks against an agent."""
-    console.print(f"[bold]Running red team attacks:[/bold]")
-    console.print(f"  Target: {agent}")
-    if suite:
-        console.print(f"  Suite: {suite}")
-    
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        console=console
-    ) as progress:
-        progress.add_task("Executing attacks...", total=None)
-        
-        console.print("[yellow]Note: Red team execution requires backend API[/yellow]")
-    
-    console.print("[green]SUCCESS[/green] Red team execution complete")
-    console.print("View results: artef redteam report")
+    """Execute red team attacks against an agent (requires backend API)."""
+    console.print("[bold yellow]? Not yet implemented in standalone CLI mode.[/bold yellow]")
+    console.print("Use the REST API instead:  [cyan]POST http://localhost:8000/api/v1/redteam/run[/cyan]")
+    console.print("Or the web UI:             [cyan]http://localhost:3000/redteam[/cyan]")
+    sys.exit(1)
 
 
 @redteam.command("report")
 @click.option("--run-id", help="Report for specific run")
 @click.option("--format", type=click.Choice(["terminal", "html", "json"]), default="terminal")
 def redteam_report(run_id: Optional[str], format: str):
-    """Generate red team attack report."""
-    console.print(f"[bold]Red Team Report[/bold]")
-    
-    if format == "terminal":
-        table = Table(title="Vulnerability Summary")
-        table.add_column("Severity", style="bold")
-        table.add_column("Count")
-        table.add_column("Examples")
-        
-        table.add_row("[red]Critical[/red]", "0", "-")
-        table.add_row("[yellow]High[/yellow]", "2", "Prompt injection, PII leak")
-        table.add_row("[blue]Medium[/blue]", "5", "Context confusion")
-        table.add_row("Low", "12", "Minor safety issues")
-        
-        console.print(table)
-        console.print("\n[yellow]Note: Full report requires backend API[/yellow]")
+    """Generate red team attack report (requires backend API)."""
+    console.print("[bold yellow]? Not yet implemented in standalone CLI mode.[/bold yellow]")
+    console.print("View reports via the REST API:  [cyan]GET http://localhost:8000/api/v1/redteam/history[/cyan]")
+    console.print("Or the web UI:                  [cyan]http://localhost:3000/redteam[/cyan]")
+    sys.exit(1)
 
 
 @cli.group()
@@ -316,34 +263,19 @@ def cache():
 @click.option("--all", is_flag=True, help="Clear all cache entries")
 @click.option("--provider", help="Clear cache for specific provider")
 def cache_clear(all: bool, provider: Optional[str]):
-    """Clear evaluation cache."""
-    if all:
-        console.print("[bold]Clearing all cache entries...[/bold]")
-        console.print("[yellow]Note: Redis integration required[/yellow]")
-        console.print("[green]SUCCESS[/green] Cache cleared")
-    elif provider:
-        console.print(f"[bold]Clearing cache for provider:[/bold] {provider}")
-        console.print("[green]SUCCESS[/green] Cache cleared")
-    else:
-        console.print("[yellow]Specify --all or --provider[/yellow]")
+    """Clear evaluation cache (requires Redis connection via backend)."""
+    console.print("[bold yellow]? Not yet implemented in standalone CLI mode.[/bold yellow]")
+    console.print("Cache is managed by the backend.  Restart the Celery worker to flush in-process state.")
+    console.print("For Redis: connect directly with [cyan]redis-cli FLUSHDB[/cyan]")
+    sys.exit(1)
 
 
 @cache.command("stats")
 def cache_stats():
-    """Show cache statistics."""
-    console.print("[bold]Cache Statistics[/bold]")
-    
-    table = Table()
-    table.add_column("Metric")
-    table.add_column("Value")
-    
-    table.add_row("Total Entries", "1,234")
-    table.add_row("Hit Rate", "87.5%")
-    table.add_row("Memory Usage", "45.2 MB")
-    table.add_row("Oldest Entry", "7 days ago")
-    
-    console.print(table)
-    console.print("\n[yellow]Note: Redis integration required for real data[/yellow]")
+    """Show cache statistics (requires Redis connection via backend)."""
+    console.print("[bold yellow]? Not yet implemented in standalone CLI mode.[/bold yellow]")
+    console.print("View cache metrics via Prometheus:  [cyan]http://localhost:9090[/cyan]")
+    sys.exit(1)
 
 
 @cli.command()
@@ -369,15 +301,21 @@ def server():
 def ui():
     """Start the ARTEF web interface."""
     console.print("[bold]Starting ARTEF web interface...[/bold]")
-    console.print("URL: http://<frontend-host>:3000")
+    console.print("URL: http://localhost:3000")
     console.print("\n[yellow]Press Ctrl+C to stop[/yellow]\n")
-    
+
     try:
         import subprocess
-        os.chdir("frontend")
-        subprocess.run(["npm", "run", "dev"])
+        frontend_dir = str(Path(__file__).parent / "frontend")
+        # Use pnpm (the project package manager) rather than npm.
+        # Popen lets Ctrl-C propagate; run() would block without forwarding it.
+        proc = subprocess.Popen(["pnpm", "dev"], cwd=frontend_dir)
+        proc.wait()
     except KeyboardInterrupt:
         console.print("\n[bold]UI stopped[/bold]")
+    except FileNotFoundError:
+        console.print("[bold red]Error:[/bold red] pnpm not found. Install with: npm install -g pnpm")
+        sys.exit(1)
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         sys.exit(1)
