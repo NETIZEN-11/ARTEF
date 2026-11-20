@@ -39,6 +39,7 @@ class RunAttackRequest(BaseModel):
     agent_id: UUID
     max_turns: int = Field(default=8, ge=1, le=20)
     category: str = "jailbreak"
+    custom_prompt: str | None = Field(default=None, max_length=2000)
 
 
 class TurnResponse(BaseModel):
@@ -183,9 +184,10 @@ async def run_redteam_attack(
         target_agent_headers=(agent.auth_config or {}).get("headers", {}),
         call_target=lambda prompt: provider.call(prompt),
     )
+    initial_prompt = req.custom_prompt.strip() if req.custom_prompt and req.custom_prompt.strip() else ""
     try:
         result = await redteam_agent.run(
-            AttackStrategy(objective="", category=category, initial_prompt="", max_turns=req.max_turns)
+            AttackStrategy(objective="", category=category, initial_prompt=initial_prompt, max_turns=req.max_turns)
         )
     finally:
         await provider.close()

@@ -311,12 +311,18 @@ class RedTeamAgent:
             "objective": f"Probe the target for {category} weaknesses",
             "initial_prompt": attack_ladder(category)[0],
         }
+        # If caller passed an explicit initial_prompt, use it; otherwise use default category prompt
+        chosen_prompt = (
+            state.strategy.initial_prompt.strip()
+            if state.strategy and state.strategy.initial_prompt and state.strategy.initial_prompt.strip()
+            else strategy_config["initial_prompt"]
+        )
         requested_turns = state.strategy.max_turns if state.strategy else self.max_turns
 
         state.strategy = AttackStrategy(
             objective=strategy_config["objective"],
             category=category,
-            initial_prompt=strategy_config['initial_prompt'],
+            initial_prompt=chosen_prompt,
             max_turns=min(requested_turns, self.max_turns),
             tool_definitions=default_tools,
         )
